@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Grafindo Jaya Teknik — Sistem Operasional</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2A30">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GJT System">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root{
+    --steel-900:#1E2A30; --steel-700:#34474F; --steel-600:#44585F;
+    --kraft-100:#EDE7D9; --kraft-200:#E2D9C4; --kraft-300:#D4C9AE;
+    --amber-500:#DA9A2E; --amber-600:#BF8323;
+    --ledger-green:#3F6B4A; --ledger-green-bg:#E4ECE2;
+    --rust-600:#A8432F; --rust-600-bg:#F1E1DB;
+    --ink-900:#22262A; --ink-500:#5B6058; --ink-300:#8B9088;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:'IBM Plex Sans',sans-serif;background:var(--kraft-100);color:var(--ink-900);-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{display:flex;min-height:100vh;}
+
+  /* ---- Login ---- */
+  .login-wrap{min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;background:var(--steel-900);}
+  .login-card{background:var(--kraft-100);width:100%;max-width:360px;border-radius:6px;padding:32px 28px;margin:16px;}
+  .login-logo{display:flex;justify-content:center;margin-bottom:18px;}
+  .login-logo img{height:52px;}
+  .login-card h2{text-align:center;font-size:16px;margin:0 0 4px;}
+  .login-card .sub{text-align:center;font-size:12px;color:var(--ink-500);margin-bottom:22px;font-family:'IBM Plex Mono',monospace;}
+  .login-error{background:var(--rust-600-bg);color:var(--rust-600);font-size:12.5px;padding:8px 12px;border-radius:3px;margin-bottom:14px;display:none;}
+  .login-error.show{display:block;}
+  .login-hint{font-size:11px;color:var(--ink-300);margin-top:16px;text-align:center;line-height:1.6;}
+
+  /* ---- Sidebar ---- */
+  .sidebar{width:250px;flex-shrink:0;background:var(--steel-900);color:#EDE7D9;display:flex;flex-direction:column;padding:18px 0 16px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 18px 16px;border-bottom:1px solid rgba(237,231,217,0.14);margin-bottom:8px;}
+  .brand img{height:26px;flex-shrink:0;}
+  .brand-text{line-height:1.15;}
+  .brand-text .name{font-weight:600;font-size:12.5px;letter-spacing:0.2px;}
+  .brand-text .sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#B7BEB2;letter-spacing:0.3px;}
+  .user-chip{display:flex;align-items:center;gap:8px;padding:8px 18px 14px;border-bottom:1px solid rgba(237,231,217,0.14);margin-bottom:8px;}
+  .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--amber-500);color:#1E2A30;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+  .user-meta{line-height:1.2;flex:1;min-width:0;}
+  .user-meta .uname{font-size:12px;font-weight:500;color:#EDE7D9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-meta .urole{font-size:10px;color:#9CA6A0;font-family:'IBM Plex Mono',monospace;}
+  .logout-btn{background:none;border:none;color:#9CA6A0;cursor:pointer;font-size:14px;flex-shrink:0;}
+  .logout-btn:hover{color:#EDE7D9;}
+
+  .nav{flex:1;overflow-y:auto;padding:0 10px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:1px;border-radius:4px;color:#C7CDC3;font-size:13px;cursor:pointer;border-left:2px solid transparent;}
+  .nav-item svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.7;}
+  .nav-item:hover{background:rgba(237,231,217,0.06);}
+  .nav-item.active{background:rgba(218,154,46,0.14);color:#F3E4C4;border-left:2px solid var(--amber-500);font-weight:500;}
+  .chevron{width:11px;height:11px;flex-shrink:0;margin-left:auto;stroke:#8B9488;fill:none;stroke-width:2;transition:transform .15s ease;}
+  .nav-item.expanded .chevron{transform:rotate(90deg);}
+  .submenu{overflow:hidden;max-height:0;transition:max-height .18s ease;}
+  .submenu.open{max-height:260px;}
+  .submenu-item{padding:6px 12px 6px 37px;font-size:12px;color:#AEB6A8;cursor:pointer;border-left:2px solid transparent;position:relative;}
+  .submenu-item::before{content:'';position:absolute;left:23px;top:0;bottom:0;width:1px;background:rgba(237,231,217,0.14);}
+  .submenu-item:hover{background:rgba(237,231,217,0.06);}
+  .submenu-item.active{color:#F3E4C4;border-left:2px solid var(--amber-500);background:rgba(218,154,46,0.10);font-weight:500;}
+  .sidebar-foot{padding:10px 12px 0;border-top:1px solid rgba(237,231,217,0.14);margin-top:8px;}
+  .sync-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:10.5px;color:#9CA6A0;font-family:'IBM Plex Mono',monospace;}
+  .sync-row:hover{background:rgba(237,231,217,0.06);color:#EDE7D9;}
+  .sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#63706B;}
+  .sync-dot.connected{background:var(--ledger-green);}
+  .sync-dot.error{background:var(--rust-600);}
+
+  /* ---- Main ---- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 26px 14px;border-bottom:1px solid var(--kraft-300);flex-wrap:wrap;gap:8px;}
+  .topbar .crumb{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-500);letter-spacing:0.2px;margin-bottom:4px;}
+  .topbar h1{font-size:19px;margin:0;font-weight:600;}
+  .content{padding:20px 26px 100px;flex:1;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--kraft-300);border:1px solid var(--kraft-300);margin-bottom:22px;}
+  .stat{background:var(--kraft-100);padding:14px 16px;}
+  .stat .label{font-size:11px;color:var(--ink-500);margin-bottom:7px;}
+  .stat .value{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;}
+  .stat .value.pos{color:var(--ledger-green);} .stat .value.neg{color:var(--rust-600);}
+
+  .panel{background:var(--kraft-100);border:1px solid var(--kraft-300);margin-bottom:22px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;border-bottom:1px solid var(--kraft-300);}
+  .panel-head h3{font-size:13px;margin:0;font-weight:600;}
+
+  .ledger{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .ledger th{text-align:left;font-size:10.5px;color:var(--ink-500);font-weight:500;padding:7px 12px;border-bottom:1px solid var(--kraft-300);white-space:nowrap;}
+  .ledger td{padding:9px 12px;border-bottom:1px solid var(--kraft-200);vertical-align:middle;}
+  .ledger tbody tr:hover{background:var(--kraft-200);}
+  .ledger td.num, .ledger th.num{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:nowrap;}
+  .pill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:2px;}
+  .pill.ok{background:var(--ledger-green-bg);color:var(--ledger-green);}
+  .pill.bad{background:var(--rust-600-bg);color:var(--rust-600);}
+  .pill.mid{background:#F1EAD8;color:var(--amber-600);}
+  .row-actions{display:flex;gap:5px;justify-content:flex-end;}
+  .icon-btn{width:25px;height:25px;border:1px solid var(--kraft-300);background:transparent;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-500);}
+  .icon-btn:hover{background:var(--kraft-200);color:var(--ink-900);}
+  .icon-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;}
+  .icon-btn.print{color:var(--steel-600);}
+
+  .empty-state{padding:36px 20px;text-align:center;color:var(--ink-500);}
+  .empty-state .big{font-size:13.5px;color:var(--ink-900);font-weight:500;margin-bottom:4px;}
+  .empty-state .small{font-size:12px;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+  .search-input, .select-input{border:1px solid var(--kraft-300);background:var(--kraft-100);padding:8px 11px;font-size:12.5px;border-radius:3px;color:var(--ink-900);font-family:'IBM Plex Sans',sans-serif;}
+  .search-input{flex:1;min-width:170px;}
+  .btn{border:none;border-radius:3px;padding:8px 15px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .btn-primary{background:var(--steel-900);color:#EDE7D9;}
+  .btn-primary:hover{background:var(--steel-700);}
+  .btn-ghost{background:transparent;color:var(--ink-500);border:1px solid var(--kraft-300);}
+  .btn-ghost:hover{background:var(--kraft-200);}
+  .btn-sm{padding:5px 10px;font-size:11.5px;}
+
+  .form-page{max-width:560px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:11.5px;color:var(--ink-500);margin-bottom:5px;}
+  .field input, .field select{width:100%;border:1px solid var(--kraft-300);background:#fff;padding:8px 10px;font-size:13px;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;color:var(--ink-900);}
+  .field input.mono-input{font-family:'IBM Plex Mono',monospace;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .calc-total{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-500);margin:-4px 0 14px;}
+  .calc-total b{color:var(--ink-900);font-size:15px;}
+  .form-actions{display:flex;gap:10px;margin-top:4px;}
+  .item-row{display:grid;grid-template-columns:2.2fr 0.7fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;}
+  .item-row input{width:100%;border:1px solid var(--kraft-300);padding:7px 8px;font-size:12.5px;border-radius:3px;}
+
+  .overlay{position:fixed;inset:0;background:rgba(30,42,48,0.42);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .modal{background:var(--kraft-100);width:100%;max-width:460px;border-radius:4px;border:1px solid var(--kraft-300);max-height:90vh;overflow-y:auto;}
+  .modal-head{padding:15px 18px;border-bottom:1px solid var(--kraft-300);display:flex;justify-content:space-between;align-items:center;}
+  .modal-head h3{margin:0;font-size:14.5px;font-weight:600;}
+  .modal-close{background:none;border:none;cursor:pointer;color:var(--ink-500);font-size:18px;line-height:1;}
+  .modal-body{padding:16px 18px;}
+  .modal-foot{padding:13px 18px;border-top:1px solid var(--kraft-300);display:flex;justify-content:flex-end;gap:10px;}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--steel-900);color:#EDE7D9;padding:10px 18px;border-radius:4px;font-size:13px;z-index:100;display:flex;align-items:center;gap:8px;}
+  .toast .dot-amber{width:6px;height:6px;border-radius:50%;background:var(--amber-500);}
+  .soon-banner{border:1px dashed var(--kraft-300);padding:36px 22px;text-align:center;color:var(--ink-500);border-radius:4px;}
+
+  .bottom-tabs{display:none;}
+  .sheet-overlay{position:fixed;inset:0;background:rgba(30,42,48,0.42);z-index:60;display:none;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--kraft-100);border-radius:12px 12px 0 0;padding:8px 0 20px;max-height:75vh;overflow-y:auto;}
+  .sheet-handle{width:36px;height:4px;background:var(--kraft-300);border-radius:2px;margin:6px auto 10px;}
+  .sheet-item{display:flex;align-items:center;gap:12px;padding:12px 20px;font-size:13.5px;color:var(--ink-900);}
+  .sheet-item svg{width:16px;height:16px;stroke:var(--ink-500);fill:none;stroke-width:1.7;}
+
+  #printArea{position:fixed;left:-9999px;top:0;width:210mm;background:#fff;color:#111;font-family:Arial,sans-serif;}
+
+  @media (max-width:820px){
+    .sidebar{display:none;}
+    .content{padding:14px 14px 90px;}
+    .topbar{padding:14px 14px 10px;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .bottom-tabs{display:flex;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--steel-900);z-index:40;padding-bottom:env(safe-area-inset-bottom);}
+    .bt-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9CA6A0;cursor:pointer;font-size:10px;}
+    .bt-item svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;}
+    .bt-item.active{color:var(--amber-500);}
+    .field-row{grid-template-columns:1fr;}
+    .item-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="printArea"></div>
+
+<script>
+const LOGO_B64 = "data:image/png;base64,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";
+const COMPANY = {
+  nama: "PT Grafindo Jaya Teknik",
+  alamat: "Jl. Pondok Pinus, Komplek Griya Pinus Lestari, No A9, RT 019/RW 008, Kel. Loktabat Utara, Kec. Banjarbaru Utara, Kota Banjarbaru, Kalimantan Selatan, 70712",
+  telp: "0851-9885-7819",
+  email: "grafjatek@gmail.com",
+  npwp: "0602 1315 9173 2000",
+};
+
+/* ============ ICONS ============ */
+const ICONS = {
+  dashboard:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+  master:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>',
+  buy:'<svg viewBox="0 0 24 24"><path d="M21 8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v2"/><path d="M3 8l1.5 11a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1L21 8"/><path d="M9 12l3 3 3-3"/><path d="M12 8v7"/></svg>',
+  sell:'<svg viewBox="0 0 24 24"><path d="M21 8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v2"/><path d="M3 8l1.5 11a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1L21 8"/><path d="M9 15l3-3 3 3"/><path d="M12 12v7"/></svg>',
+  quote:'<svg viewBox="0 0 24 24"><path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/><path d="M8 13h8M8 17h5"/></svg>',
+  expense:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c0-1.4-1.3-2-3-2s-3 .8-3 2c0 3 6 1.4 6 4.5 0 1.4-1.3 2-3 2s-3-.7-3-2"/></svg>',
+  finance:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="1.5"/><path d="M2 10h20"/><circle cx="16" cy="14.5" r="1.6"/></svg>',
+  employee:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="8.5" r="2.4"/><path d="M16 14.2c2.6.5 4.5 2.3 4.5 5.3"/></svg>',
+  asset:'<svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
+  sales:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 5-7 4 4"/><path d="M3 21h18"/></svg>',
+  leadtime:'<svg viewBox="0 0 24 24"><rect x="1" y="7" width="14" height="10" rx="1"/><path d="M15 10h3l4 3v4h-7"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>',
+  print:'<svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M6 17v4h12v-4"/></svg>',
+  chevron:'<svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+};
+function icon(n){return ICONS[n]||'';}
+
+/* ============ SCHEMAS (generic CRUD engine) ============ */
+const SCHEMAS = {
+  masterBarang:{ label:'Barang', idField:'kodeBarang', hasLaporan:false,
+    fields:[
+      {key:'kodeBarang',label:'Kode Barang',type:'text',required:true},
+      {key:'namaBarang',label:'Nama Barang',type:'text',required:true},
+      {key:'kategori',label:'Kategori',type:'text'},
+      {key:'satuan',label:'Satuan',type:'text'},
+      {key:'hargaBeliTerakhir',label:'Harga Beli Terakhir',type:'number'},
+      {key:'hargaJualStandar',label:'Harga Jual Standar',type:'number'},
+      {key:'stokMinimum',label:'Stok Minimum',type:'number'},
+      {key:'keterangan',label:'Keterangan',type:'text'},
+    ], listCols:['kodeBarang','namaBarang','kategori','satuan','hargaJualStandar'] },
+  masterSupplier:{ label:'Supplier', idField:'kodeSupplier', hasLaporan:false,
+    fields:[
+      {key:'kodeSupplier',label:'Kode Supplier',type:'text',required:true},
+      {key:'namaSupplier',label:'Nama Supplier',type:'text',required:true},
+      {key:'kontakPerson',label:'Kontak Person',type:'text'},
+      {key:'telepon',label:'Telepon',type:'text'},
+      {key:'alamat',label:'Alamat',type:'text'},
+      {key:'terminPembayaranHari',label:'Termin Pembayaran (hari)',type:'number'},
+      {key:'keterangan',label:'Keterangan',type:'text'},
+    ], listCols:['kodeSupplier','namaSupplier','kontakPerson','telepon'] },
+  masterCustomer:{ label:'Customer', idField:'kodeCustomer', hasLaporan:false,
+    fields:[
+      {key:'kodeCustomer',label:'Kode Customer',type:'text',required:true},
+      {key:'namaCustomer',label:'Nama Customer',type:'text',required:true},
+      {key:'kontakPerson',label:'Kontak Person',type:'text'},
+      {key:'telepon',label:'Telepon',type:'text'},
+      {key:'alamat',label:'Alamat',type:'text'},
+      {key:'terminPembayaranHari',label:'Termin Pembayaran (hari)',type:'number'},
+      {key:'keterangan',label:'Keterangan',type:'text'},
+    ], listCols:['kodeCustomer','namaCustomer','kontakPerson','telepon'] },
+  masterKaryawan:{ label:'Karyawan', idField:'nik', hasLaporan:false,
+    fields:[
+      {key:'nik',label:'NIK',type:'text',required:true},
+      {key:'namaKaryawan',label:'Nama Karyawan',type:'text',required:true},
+      {key:'jabatan',label:'Jabatan',type:'text'},
+      {key:'departemen',label:'Departemen',type:'text'},
+      {key:'tanggalMasuk',label:'Tanggal Masuk',type:'date'},
+      {key:'statusKaryawan',label:'Status',type:'select',options:['Aktif','Nonaktif']},
+      {key:'noHp',label:'No HP',type:'text'},
+      {key:'alamat',label:'Alamat',type:'text'},
+      {key:'gajiPokok',label:'Gaji Pokok',type:'number'},
+      {key:'tunjangan',label:'Tunjangan',type:'number'},
+      {key:'noRekening',label:'No Rekening',type:'text'},
+      {key:'kodeMitra',label:'Mitra (jika bagian tim Sales Mitra)',type:'lookup',ref:'masterMitra',refLabel:'namaMitra'},
+      {key:'keterangan',label:'Keterangan',type:'text'},
+    ], listCols:['nik','namaKaryawan','jabatan','departemen','statusKaryawan'] },
+  masterMitra:{ label:'Mitra', idField:'kodeMitra', hasLaporan:false,
+    fields:[
+      {key:'kodeMitra',label:'Kode Mitra',type:'text',required:true},
+      {key:'namaMitra',label:'Nama Mitra',type:'text',required:true},
+      {key:'persentaseMargin',label:'Persentase Bagi Hasil Margin Bersih (%)',type:'number',required:true},
+      {key:'kontak',label:'Kontak',type:'text'},
+      {key:'keterangan',label:'Keterangan',type:'text'},
+    ], listCols:['kodeMitra','namaMitra','persentaseMargin','kontak'] },
+
+  pembelian:{ label:'Pembelian', idField:null, idPrefix:'PB', hasLaporan:true, reportGroupField:'kodeSupplier', printable:'po',
+    fields:[
+      {key:'tanggal',label:'Tanggal',type:'date',required:true},
+      {key:'kodeSupplier',label:'Supplier',type:'lookup',ref:'masterSupplier',refLabel:'namaSupplier',required:true},
+      {key:'kodeBarang',label:'Barang',type:'lookup',ref:'masterBarang',refLabel:'namaBarang',required:true},
+      {key:'qty',label:'Qty',type:'number',required:true},
+      {key:'hargaSatuan',label:'Harga Satuan (Rp)',type:'number',required:true},
+      {key:'status',label:'Status Pembayaran',type:'select',options:['Lunas','Sebagian','Belum Lunas']},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ],
+    computed:[{key:'total',label:'Total',fn:it=>(Number(it.qty)||0)*(Number(it.hargaSatuan)||0)}],
+    listCols:['tanggal','kodeSupplier','kodeBarang','qty','hargaSatuan','total','status'] },
+
+  penjualan:{ label:'Penjualan', idField:null, idPrefix:'PJ', hasLaporan:true, reportGroupField:'kodeCustomer', printable:'invoice',
+    fields:[
+      {key:'tanggal',label:'Tanggal',type:'date',required:true},
+      {key:'kodeCustomer',label:'Customer',type:'lookup',ref:'masterCustomer',refLabel:'namaCustomer',required:true},
+      {key:'kodeBarang',label:'Barang',type:'lookup',ref:'masterBarang',refLabel:'namaBarang',required:true},
+      {key:'qty',label:'Qty',type:'number',required:true},
+      {key:'hargaJual',label:'Harga Jual (Rp)',type:'number',required:true},
+      {key:'nikSales',label:'Sales PIC',type:'lookup',ref:'masterKaryawan',refLabel:'namaKaryawan'},
+      {key:'status',label:'Status Pembayaran',type:'select',options:['Lunas','Sebagian','Belum Lunas']},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ],
+    computed:[{key:'total',label:'Total',fn:it=>(Number(it.qty)||0)*(Number(it.hargaJual)||0)}],
+    listCols:['tanggal','kodeCustomer','kodeBarang','qty','hargaJual','total','status'] },
+
+  operationalExpense:{ label:'Operational Expense', idField:null, idPrefix:'OE', hasLaporan:true, reportGroupField:'kategoriBiaya', reportSumField:'jumlah',
+    fields:[
+      {key:'tanggal',label:'Tanggal',type:'date',required:true},
+      {key:'kategoriBiaya',label:'Kategori Biaya',type:'select',options:['Sewa','Listrik & Air','Transportasi','Gaji','ATK','Marketing','Perawatan Aset','Lainnya']},
+      {key:'deskripsi',label:'Deskripsi',type:'text',required:true},
+      {key:'jumlah',label:'Jumlah (Rp)',type:'number',required:true},
+      {key:'metodePembayaran',label:'Metode Pembayaran',type:'select',options:['Cash','Transfer','Lainnya']},
+      {key:'pic',label:'PIC',type:'text'},
+      {key:'status',label:'Status',type:'select',options:['Lunas','Belum Lunas']},
+      {key:'kodeMitra',label:'Mitra (jika biaya terkait tim Mitra)',type:'lookup',ref:'masterMitra',refLabel:'namaMitra'},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ], listCols:['tanggal','kategoriBiaya','deskripsi','jumlah','status'] },
+
+  bukuKas:{ label:'Buku Kas', idField:null, idPrefix:'BK', hasLaporan:true, reportGroupField:'kategori', reportSumField:'jumlahMasuk',
+    fields:[
+      {key:'tanggal',label:'Tanggal',type:'date',required:true},
+      {key:'jenis',label:'Jenis',type:'select',options:['Masuk','Keluar'],required:true},
+      {key:'kategori',label:'Kategori',type:'select',options:['Penjualan','Pembelian','Operasional','Gaji','Aset','Modal','Lainnya']},
+      {key:'referensi',label:'Referensi (No. Transaksi)',type:'text'},
+      {key:'keterangan',label:'Keterangan',type:'text',required:true},
+      {key:'jumlahMasuk',label:'Jumlah Masuk (Rp)',type:'number'},
+      {key:'jumlahKeluar',label:'Jumlah Keluar (Rp)',type:'number'},
+      {key:'metodePembayaran',label:'Metode',type:'select',options:['Cash','Transfer','Lainnya']},
+      {key:'pic',label:'PIC',type:'text'},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ], listCols:['tanggal','jenis','kategori','keterangan','jumlahMasuk','jumlahKeluar','saldo'] },
+
+  aset:{ label:'Aset', idField:'kodeAset', hasLaporan:false,
+    fields:[
+      {key:'kodeAset',label:'Kode Aset',type:'text',required:true},
+      {key:'namaAset',label:'Nama Aset',type:'text',required:true},
+      {key:'kategori',label:'Kategori',type:'select',options:['Kendaraan','Peralatan Gudang','Elektronik','Bangunan','Lainnya']},
+      {key:'tanggalPerolehan',label:'Tanggal Perolehan',type:'date'},
+      {key:'nilaiPerolehan',label:'Nilai Perolehan (Rp)',type:'number'},
+      {key:'umurEkonomisTahun',label:'Umur Ekonomis (tahun)',type:'number'},
+      {key:'lokasi',label:'Lokasi',type:'text'},
+      {key:'nikPenanggungJawab',label:'Penanggung Jawab',type:'lookup',ref:'masterKaryawan',refLabel:'namaKaryawan'},
+      {key:'kondisi',label:'Kondisi',type:'select',options:['Baik','Perlu Perbaikan','Rusak']},
+      {key:'status',label:'Status',type:'select',options:['Aktif','Nonaktif','Dijual']},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ],
+    computed:[
+      {key:'nilaiBuku',label:'Nilai Buku Saat Ini',fn:it=>{
+        const nilai=Number(it.nilaiPerolehan)||0, umur=Number(it.umurEkonomisTahun)||0;
+        if(!umur||!it.tanggalPerolehan) return nilai;
+        const penyusutan = nilai/umur;
+        const years = Math.floor((Date.now()-new Date(it.tanggalPerolehan).getTime())/(365.25*24*3600*1000));
+        return Math.max(nilai-penyusutan*years,0);
+      }},
+    ],
+    listCols:['kodeAset','namaAset','kategori','nilaiPerolehan','nilaiBuku','kondisi','status'] },
+
+  penggajian:{ label:'Penggajian', idField:null, idPrefix:'PG', hasLaporan:true, reportGroupField:'periode', reportSumField:'totalGaji',
+    fields:[
+      {key:'periode',label:'Periode (YYYY-MM)',type:'text',required:true},
+      {key:'nik',label:'Karyawan',type:'lookup',ref:'masterKaryawan',refLabel:'namaKaryawan',required:true},
+      {key:'potongan',label:'Potongan (Rp)',type:'number'},
+      {key:'status',label:'Status Bayar',type:'select',options:['Lunas','Belum Lunas']},
+      {key:'tanggalBayar',label:'Tanggal Bayar',type:'date'},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ],
+    computed:[
+      {key:'gajiPokok',label:'Gaji Pokok',fn:it=>{const k=lookupRow('masterKaryawan',it.nik); return k?Number(k.gajiPokok)||0:0;}},
+      {key:'tunjangan',label:'Tunjangan',fn:it=>{const k=lookupRow('masterKaryawan',it.nik); return k?Number(k.tunjangan)||0:0;}},
+      {key:'totalGaji',label:'Total Gaji',fn:it=>{
+        const k=lookupRow('masterKaryawan',it.nik);
+        const pokok=k?Number(k.gajiPokok)||0:0, tunj=k?Number(k.tunjangan)||0:0;
+        return pokok+tunj-(Number(it.potongan)||0);
+      }},
+    ],
+    listCols:['periode','nik','gajiPokok','tunjangan','potongan','totalGaji','status'] },
+
+  targetSales:{ label:'Target Sales', idField:null, idPrefix:'TS', hasLaporan:false,
+    fields:[
+      {key:'bulan',label:'Bulan (YYYY-MM)',type:'text',required:true},
+      {key:'nikSales',label:'Sales',type:'lookup',ref:'masterKaryawan',refLabel:'namaKaryawan',required:true},
+      {key:'targetPenjualan',label:'Target Penjualan (Rp)',type:'number',required:true},
+    ],
+    computed:[
+      {key:'realisasi',label:'Realisasi',fn:it=>{
+        const data = state.data.penjualan||[];
+        return data.filter(p=>monthKey(p.tanggal)===it.bulan && p.nikSales===it.nikSales)
+          .reduce((a,p)=>a+((Number(p.qty)||0)*(Number(p.hargaJual)||0)),0);
+      }},
+      {key:'pencapaian',label:'Pencapaian',fn:it=>{
+        const target=Number(it.targetPenjualan)||0;
+        if(!target) return 0;
+        const data = state.data.penjualan||[];
+        const realisasi = data.filter(p=>monthKey(p.tanggal)===it.bulan && p.nikSales===it.nikSales)
+          .reduce((a,p)=>a+((Number(p.qty)||0)*(Number(p.hargaJual)||0)),0);
+        return realisasi/target;
+      }},
+    ],
+    listCols:['bulan','nikSales','targetPenjualan','realisasi','pencapaian'] },
+
+  pengiriman:{ label:'Pengiriman', idField:null, idPrefix:'KR', hasLaporan:false, printable:'suratjalan',
+    fields:[
+      {key:'idPenjualan',label:'Referensi Penjualan',type:'lookup',ref:'penjualan',refLabel:'_penjualanLabel',required:true},
+      {key:'tanggalOrder',label:'Tanggal Order',type:'date'},
+      {key:'tanggalKirim',label:'Tanggal Kirim',type:'date'},
+      {key:'tanggalDiterima',label:'Tanggal Diterima',type:'date'},
+      {key:'ekspedisi',label:'Ekspedisi/Kurir',type:'text'},
+      {key:'noResi',label:'No Resi',type:'text'},
+      {key:'tujuanAlamat',label:'Tujuan Alamat',type:'text'},
+      {key:'statusPengiriman',label:'Status',type:'select',options:['Diproses','Dikirim','Diterima','Terlambat']},
+      {key:'catatan',label:'Catatan',type:'text'},
+    ],
+    computed:[{key:'leadTimeHari',label:'Lead Time (hari)',fn:it=>{
+      if(!it.tanggalKirim||!it.tanggalDiterima) return '';
+      const d = (new Date(it.tanggalDiterima)-new Date(it.tanggalKirim))/(24*3600*1000);
+      return Math.round(d);
+    }}],
+    listCols:['idPenjualan','tanggalKirim','tanggalDiterima','leadTimeHari','ekspedisi','statusPengiriman'] },
+
+  users:{ label:'Pengguna', idField:null, idPrefix:'USR', hasLaporan:false,
+    fields:[
+      {key:'username',label:'Username',type:'text',required:true},
+      {key:'password',label:'Password',type:'text',required:true},
+      {key:'role',label:'Role',type:'select',options:['Admin','Procurement','Penjualan','Sales','FA','GA','Mitra'],required:true},
+      {key:'namaLengkap',label:'Nama Lengkap',type:'text'},
+      {key:'nik',label:'NIK Karyawan (untuk role Sales/Penjualan)',type:'lookup',ref:'masterKaryawan',refLabel:'namaKaryawan'},
+      {key:'kodeMitra',label:'Kode Mitra (untuk role Mitra)',type:'lookup',ref:'masterMitra',refLabel:'namaMitra'},
+    ], listCols:['username','role','namaLengkap','nik'] },
+};
+
+/* ============ MENU TREE ============ */
+const ALL_ROLES = ['Admin','Procurement','Penjualan','Sales','FA','GA','Mitra'];
+const MENU = [
+  {id:'dashboard', label:'Dashboard', icon:'dashboard', roles: ALL_ROLES},
+  {id:'master', label:'Data Master', icon:'master', roles:['Admin','FA'], submenu:[
+    {id:'masterBarang', label:'Barang'}, {id:'masterSupplier', label:'Supplier'}, {id:'masterCustomer', label:'Customer'}, {id:'masterMitra', label:'Mitra'},
+  ]},
+  {id:'pembelian', label:'Pembelian Barang', icon:'buy', roles:['Admin','Procurement'], submenu:[
+    {id:'daftar', label:'Daftar Pembelian'},
+    {id:'tambah', label:'Tambah Pembelian', roles:['Admin']},
+    {id:'laporan', label:'Laporan Pembelian'},
+  ]},
+  {id:'penjualan', label:'Penjualan Barang', icon:'sell', roles:['Admin','Penjualan'], submenu:[
+    {id:'daftar', label:'Daftar Penjualan'},
+    {id:'tambah', label:'Tambah Penjualan', roles:['Admin']},
+    {id:'laporan', label:'Laporan Penjualan'},
+  ]},
+  {id:'quotation', label:'Quotation', icon:'quote', roles:['Admin','Penjualan','Sales','Procurement','Mitra'], submenu:[
+    {id:'daftar', label:'Daftar Quotation'},
+    {id:'tambah', label:'Buat Quotation', hideForRoles:['Sales','Penjualan','Procurement','Mitra']},
+    {id:'margin', label:'Pengaturan Margin', roles:['Admin']},
+  ]},
+  {id:'expense', label:'Operational Expense', icon:'expense', roles:['Admin','FA','Mitra'], submenu:[
+    {id:'daftar', label:'Daftar Biaya'}, {id:'tambah', label:'Tambah Biaya', roles:['Admin','FA']}, {id:'laporan', label:'Laporan Biaya', roles:['Admin','FA']},
+  ]},
+  {id:'keuangan', label:'Keuangan', icon:'finance', roles:['Admin','FA'], submenu:[
+    {id:'daftar', label:'Buku Kas'}, {id:'tambah', label:'Tambah Transaksi'}, {id:'laporan', label:'Laporan Kas'},
+  ]},
+  {id:'karyawan', label:'Karyawan', icon:'employee', roles:['Admin','FA','GA','Mitra'], submenu:[
+    {id:'data', label:'Data Karyawan', roles:['Admin','FA','GA','Mitra']},
+    {id:'penggajian', label:'Penggajian', roles:['Admin','FA']},
+    {id:'penggajianTambah', label:'Proses Gaji', roles:['Admin','FA']},
+    {id:'penggajianLaporan', label:'Laporan Gaji', roles:['Admin','FA']},
+  ]},
+  {id:'aset', label:'Aset', icon:'asset', roles:['Admin','FA','GA'], submenu:[
+    {id:'daftar', label:'Daftar Aset'}, {id:'tambah', label:'Tambah Aset'},
+  ]},
+  {id:'salestracker', label:'Sales Tracker', icon:'sales', roles:['Admin','Penjualan','Sales','Mitra'], submenu:[
+    {id:'pipeline', label:'Pipeline Prospek'},
+    {id:'tambah', label:'Tambah Prospek', roles:['Admin','Sales']},
+    {id:'target', label:'Target Sales'},
+  ]},
+  {id:'leadtime', label:'Lead Time Pengiriman', icon:'leadtime', roles:['Admin','Procurement'], submenu:[
+    {id:'daftar', label:'Daftar Pengiriman'}, {id:'tambah', label:'Tambah Pengiriman'},
+  ]},
+  {id:'laporankomisi', label:'Laporan Komisi', icon:'finance', roles:['Admin','Mitra']},
+  {id:'pengguna', label:'Kelola Pengguna', icon:'employee', roles:['Admin'], submenu:[
+    {id:'daftar', label:'Daftar Pengguna'}, {id:'tambah', label:'Tambah Pengguna'},
+  ]},
+];
+const BOTTOM_BY_ROLE = {
+  Admin: ['dashboard','pembelian','penjualan'],
+  Procurement: ['dashboard','pembelian','leadtime'],
+  Penjualan: ['dashboard','penjualan','salestracker'],
+  Sales: ['dashboard','salestracker','quotation'],
+  FA: ['dashboard','keuangan','expense'],
+  GA: ['dashboard','karyawan','aset'],
+  Mitra: ['dashboard','laporankomisi','salestracker'],
+};
+
+/* ============ STATE ============ */
+let state = {
+  user: null,
+  loginError: '',
+  loading: true,
+  view: 'dashboard',
+  data: {},
+  expanded: new Set(),
+  modal: null,
+  toast: null,
+  search: '',
+  reportMonth: 'semua',
+  reportMitra: '',
+  sheetsUrl: '',
+  syncStatus: 'local',
+  settings: { defaultMarginPercent: 40 },
+};
+const ENTITY_KEYS = Object.keys(SCHEMAS);
+const EXTRA_DATA_KEYS = ['salesTracker'];
+
+/* ============ HELPERS ============ */
+function rupiah(n){ n=Number(n)||0; return 'Rp'+Math.round(n).toLocaleString('id-ID'); }
+function fmtDate(d){ if(!d) return '-'; try{ return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){return d;} }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function uid(prefix){ return (prefix?prefix+'-':'')+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase(); }
+function monthKey(d){ return d?d.slice(0,7):''; }
+function escapeHtml(str){ return (str||'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showToast(msg){ state.toast=msg; render(); clearTimeout(window._t); window._t=setTimeout(()=>{state.toast=null;render();},2400); }
+
+function lookupRow(entity, keyVal){
+  const schema = SCHEMAS[entity]; if(!schema) return null;
+  const idF = schema.idField || 'id';
+  return (state.data[entity]||[]).find(r=>String(r[idF])===String(keyVal));
+}
+function lookupDisplay(field, value){
+  if(!value) return '';
+  if(field.ref==='penjualan'){
+    const row = lookupRow('penjualan', value);
+    if(!row) return value;
+    const cust = lookupRow('masterCustomer', row.kodeCustomer);
+    const brg = lookupRow('masterBarang', row.kodeBarang);
+    return `${value} (${cust?cust.namaCustomer:'-'} — ${brg?brg.namaBarang:'-'})`;
+  }
+  const row = lookupRow(field.ref, value);
+  if(!row) return value;
+  return `${value} - ${row[field.refLabel]||''}`;
+}
+function lookupNameOnly(field, value){
+  if(!value) return '-';
+  if(field.ref==='penjualan'){
+    const row = lookupRow('penjualan', value);
+    if(!row) return value;
+    const cust = lookupRow('masterCustomer', row.kodeCustomer);
+    return cust?cust.namaCustomer:value;
+  }
+  const row = lookupRow(field.ref, value);
+  return row ? row[field.refLabel] : value;
+}
+
+/* ============ STORAGE ============ */
+function relDate(offsetDays){
+  const dt = new Date();
+  dt.setDate(dt.getDate()+offsetDays);
+  return dt.toISOString().slice(0,10);
+}
+function relMonth(offsetMonths){
+  const dt = new Date();
+  dt.setMonth(dt.getMonth()+offsetMonths);
+  return dt.toISOString().slice(0,7);
+}
+async function seedDemoData(){
+  // ---- Master Karyawan ----
+  state.data.masterKaryawan = [
+    {nik:'EMP-001', namaKaryawan:'Budi Santoso', jabatan:'Sales Executive', departemen:'Penjualan', tanggalMasuk:'2024-03-01', statusKaryawan:'Aktif', noHp:'0821-1111-2222', alamat:'Jl. Melati No. 3, Banjarbaru', gajiPokok:5500000, tunjangan:1000000, noRekening:'BCA 1234567890', keterangan:''},
+    {nik:'EMP-002', namaKaryawan:'Siti Aminah', jabatan:'Staff Penjualan', departemen:'Penjualan', tanggalMasuk:'2023-11-15', statusKaryawan:'Aktif', noHp:'0822-3333-4444', alamat:'Jl. Kenanga No. 7, Banjarbaru', gajiPokok:5000000, tunjangan:800000, noRekening:'BCA 2233445566', keterangan:''},
+    {nik:'EMP-003', namaKaryawan:'Rudi Hartono', jabatan:'Staff Procurement', departemen:'Procurement', tanggalMasuk:'2023-06-01', statusKaryawan:'Aktif', noHp:'0823-5555-6666', alamat:'Jl. Mawar No. 2, Banjarbaru', gajiPokok:5200000, tunjangan:900000, noRekening:'Mandiri 3344556677', keterangan:''},
+    {nik:'EMP-004', namaKaryawan:'Dewi Lestari', jabatan:'Staff Finance & Accounting', departemen:'Keuangan', tanggalMasuk:'2022-09-01', statusKaryawan:'Aktif', noHp:'0812-7777-8888', alamat:'Jl. Anggrek No. 9, Banjarbaru', gajiPokok:6000000, tunjangan:1200000, noRekening:'BCA 4455667788', keterangan:''},
+    {nik:'EMP-005', namaKaryawan:'Andi Wijaya', jabatan:'Staff General Affairs', departemen:'GA', tanggalMasuk:'2023-01-10', statusKaryawan:'Aktif', noHp:'0813-9999-0000', alamat:'Jl. Cempaka No. 4, Banjarbaru', gajiPokok:4800000, tunjangan:700000, noRekening:'BRI 5566778899', keterangan:''},
+    {nik:'EMP-006', namaKaryawan:'Maya Putri', jabatan:'Sales Executive', departemen:'Penjualan', tanggalMasuk:'2024-06-01', statusKaryawan:'Aktif', noHp:'0851-2222-3333', alamat:'Jl. Flamboyan No. 6, Banjarbaru', gajiPokok:5500000, tunjangan:1000000, noRekening:'BCA 6677889900', keterangan:''},
+    {nik:'EMP-007', namaKaryawan:'Hendra Saputra', jabatan:'Sales Executive (Tim Mitra)', departemen:'Penjualan', tanggalMasuk:'2024-09-01', statusKaryawan:'Aktif', noHp:'0811-4444-5555', alamat:'Jl. Pinus Raya, Banjarbaru', gajiPokok:0, tunjangan:0, noRekening:'-', kodeMitra:'MTR-001', keterangan:'Tim sales milik Mitra (Erik), bukan karyawan payroll Grafindo'},
+    {nik:'EMP-008', namaKaryawan:'Fajar Nugroho', jabatan:'Sales Executive (Tim Mitra)', departemen:'Penjualan', tanggalMasuk:'2025-02-01', statusKaryawan:'Aktif', noHp:'0811-6666-7777', alamat:'Jl. Pinus Raya, Banjarbaru', gajiPokok:0, tunjangan:0, noRekening:'-', kodeMitra:'MTR-001', keterangan:'Tim sales milik Mitra (Erik), bukan karyawan payroll Grafindo'},
+  ];
+
+  // ---- Master Mitra (partner bagi hasil margin) ----
+  state.data.masterMitra = [
+    {kodeMitra:'MTR-001', namaMitra:'Erik (Partner Marketing)', persentaseMargin:50, kontak:'0811-0000-1111', keterangan:'Bagi hasil Margin Bersih 50:50 untuk customer yang dibawa oleh tim sales miliknya. Customer lama milik perusahaan tidak dibagi.'},
+  ];
+
+  // ---- Hubungkan akun login demo ke NIK Karyawan / Kode Mitra ----
+  (state.data.users||[]).forEach(u=>{
+    if(u.username==='procurement') u.nik='EMP-003';
+    if(u.username==='penjualan') u.nik='EMP-002';
+    if(u.username==='sales') u.nik='EMP-001';
+    if(u.username==='fa') u.nik='EMP-004';
+    if(u.username==='ga') u.nik='EMP-005';
+    if(u.username==='erik') u.kodeMitra='MTR-001';
+  });
+
+  // ---- Master Barang ----
+  state.data.masterBarang = [
+    {kodeBarang:'BRG-001', namaBarang:'Besi Beton 12mm', kategori:'Material', satuan:'Batang', hargaBeliTerakhir:85000, hargaJualStandar:120000, stokMinimum:100, keterangan:''},
+    {kodeBarang:'BRG-002', namaBarang:'Semen 50kg', kategori:'Material', satuan:'Sak', hargaBeliTerakhir:65000, hargaJualStandar:78000, stokMinimum:50, keterangan:''},
+    {kodeBarang:'BRG-003', namaBarang:'Pipa PVC 4 Inch', kategori:'Material', satuan:'Batang', hargaBeliTerakhir:45000, hargaJualStandar:65000, stokMinimum:30, keterangan:''},
+    {kodeBarang:'BRG-004', namaBarang:'Kabel NYM 3x2.5mm', kategori:'Elektrikal', satuan:'Roll', hargaBeliTerakhir:350000, hargaJualStandar:450000, stokMinimum:10, keterangan:''},
+    {kodeBarang:'BRG-005', namaBarang:'Cat Tembok 25kg', kategori:'Material', satuan:'Pail', hargaBeliTerakhir:220000, hargaJualStandar:280000, stokMinimum:20, keterangan:''},
+    {kodeBarang:'BRG-006', namaBarang:'Bata Ringan', kategori:'Material', satuan:'m3', hargaBeliTerakhir:650000, hargaJualStandar:780000, stokMinimum:15, keterangan:''},
+    {kodeBarang:'BRG-007', namaBarang:'Genteng Metal', kategori:'Material', satuan:'Lembar', hargaBeliTerakhir:35000, hargaJualStandar:50000, stokMinimum:200, keterangan:''},
+    {kodeBarang:'BRG-008', namaBarang:'Paku 5cm', kategori:'Hardware', satuan:'Kg', hargaBeliTerakhir:18000, hargaJualStandar:25000, stokMinimum:50, keterangan:''},
+  ];
+
+  // ---- Master Supplier ----
+  state.data.masterSupplier = [
+    {kodeSupplier:'SUP-001', namaSupplier:'CV Sumber Jaya', kontakPerson:'Hendra', telepon:'0812-3456-7890', alamat:'Jl. Industri No. 12, Banjarmasin', terminPembayaranHari:30, keterangan:''},
+    {kodeSupplier:'SUP-002', namaSupplier:'PT Baja Utama', kontakPerson:'Rina', telepon:'0813-1122-3344', alamat:'Jl. A. Yani KM 8, Banjarbaru', terminPembayaranHari:14, keterangan:''},
+    {kodeSupplier:'SUP-003', namaSupplier:'Toko Bangunan Sejahtera', kontakPerson:'Joko', telepon:'0811-9988-7766', alamat:'Jl. Trikora, Banjarbaru', terminPembayaranHari:7, keterangan:''},
+    {kodeSupplier:'SUP-004', namaSupplier:'CV Elektrik Mandiri', kontakPerson:'Sari', telepon:'0852-4433-2211', alamat:'Jl. Guntung Manggis, Banjarbaru', terminPembayaranHari:30, keterangan:''},
+  ];
+
+  // ---- Master Customer ----
+  state.data.masterCustomer = [
+    {kodeCustomer:'CUS-001', namaCustomer:'PT Bangun Sejahtera', kontakPerson:'Firman', telepon:'0813-2233-4455', alamat:'Jl. A. Yani KM 5, Banjarbaru', terminPembayaranHari:30, keterangan:''},
+    {kodeCustomer:'CUS-002', namaCustomer:'Toko Makmur Bangunan', kontakPerson:'Sari Wulandari', telepon:'0812-7788-9900', alamat:'Jl. Trikora No. 20, Banjarbaru', terminPembayaranHari:14, keterangan:''},
+    {kodeCustomer:'CUS-003', namaCustomer:'CV Karya Abadi', kontakPerson:'Dedi', telepon:'0811-5566-7788', alamat:'Jl. Guntung Payung, Banjarbaru', terminPembayaranHari:0, keterangan:'Selalu bayar cash'},
+    {kodeCustomer:'CUS-004', namaCustomer:'PT Mitra Konstruksi', kontakPerson:'Lina', telepon:'0852-1122-3344', alamat:'Jl. Trans Kalimantan, Banjarbaru', terminPembayaranHari:30, keterangan:''},
+    {kodeCustomer:'CUS-005', namaCustomer:'Bpk. Anton (Perorangan)', kontakPerson:'Anton', telepon:'0813-9900-1122', alamat:'Jl. Pinus, Banjarbaru', terminPembayaranHari:0, keterangan:''},
+    {kodeCustomer:'CUS-006', namaCustomer:'PT Nusantara Teknindo', kontakPerson:'Yusuf', telepon:'0821-5566-7788', alamat:'Jl. Ahmad Yani KM 12, Banjarbaru', terminPembayaranHari:30, keterangan:'Customer dibawa oleh tim Mitra (Erik)'},
+  ];
+
+  // ---- Sales Tracker (pipeline beragam tahap) ----
+  state.data.salesTracker = [
+    {id:'ST-DEMO1', tanggalInput:relDate(-15), nikSales:'EMP-001', kodeCustomer:'CUS-002', namaProspek:'', kontakProspek:'0812-7788-9900',
+      items:[{namaBarang:'Semen 50kg', qty:100},{namaBarang:'Besi Beton 12mm', qty:50}],
+      statusProspek:'Follow Up', tanggalFollowUpBerikutnya:relDate(3), catatan:'Customer minta penawaran ulang setelah cek anggaran'},
+    {id:'ST-DEMO2', tanggalInput:relDate(-13), nikSales:'EMP-001', kodeCustomer:'CUS-001', namaProspek:'', kontakProspek:'0813-2233-4455',
+      items:[{namaBarang:'Pipa PVC 4 Inch', qty:200}],
+      statusProspek:'Negosiasi', tanggalFollowUpBerikutnya:relDate(2), catatan:'Nego harga, minta diskon tambahan'},
+    {id:'ST-DEMO3', tanggalInput:relDate(-20), nikSales:'EMP-006', kodeCustomer:'CUS-004', namaProspek:'', kontakProspek:'0852-1122-3344',
+      items:[{namaBarang:'Kabel NYM 3x2.5mm', qty:20},{namaBarang:'Cat Tembok 25kg', qty:15}],
+      statusProspek:'Deal', tanggalFollowUpBerikutnya:'', catatan:'PO customer sudah diterima', quotationId:'QUO-DEMO3'},
+    {id:'ST-DEMO4', tanggalInput:relDate(-2), nikSales:'EMP-001', kodeCustomer:'CUS-005', namaProspek:'', kontakProspek:'0813-9900-1122',
+      items:[{namaBarang:'Genteng Metal', qty:500}],
+      statusProspek:'Prospek', tanggalFollowUpBerikutnya:relDate(5), catatan:'Baru inquiry lewat WhatsApp'},
+    {id:'ST-DEMO5', tanggalInput:relDate(-9), nikSales:'EMP-007', kodeCustomer:'CUS-006', namaProspek:'', kontakProspek:'0821-5566-7788',
+      items:[{namaBarang:'Besi Beton 12mm', qty:150},{namaBarang:'Semen 50kg', qty:80}],
+      statusProspek:'Deal', tanggalFollowUpBerikutnya:'', catatan:'Deal lewat relasi tim Mitra (Erik)', quotationId:'QUO-DEMO4'},
+    {id:'ST-DEMO6', tanggalInput:relDate(-3), nikSales:'EMP-008', kodeCustomer:'', namaProspek:'UD Sumber Rezeki', kontakProspek:'0852-9900-1122',
+      items:[{namaBarang:'Bata Ringan', qty:40}],
+      statusProspek:'Negosiasi', tanggalFollowUpBerikutnya:relDate(4), catatan:'Masih nego harga, dari relasi tim Mitra'},
+  ];
+
+  // ---- Quotation (tiga tahap berbeda) ----
+  state.data.quotation = [
+    {id:'QUO-DEMO1', tanggal:relDate(-14), validUntil:relDate(16), kodeCustomer:'CUS-002', namaCustomerManual:'', diskon:0,
+     status:'Menunggu Harga', catatan:'', salesTrackerId:'ST-DEMO1',
+     items:[
+       {namaBarang:'Semen 50kg', qty:100, stok:'50', lokasi:'Gudang Utama', hargaBeli:65000, ongkosKirim:2000, materialHandling:0, marginPersen:40},
+       {namaBarang:'Besi Beton 12mm', qty:50, stok:'', lokasi:'', hargaBeli:0, ongkosKirim:0, materialHandling:0, marginPersen:40},
+     ]},
+    {id:'QUO-DEMO2', tanggal:relDate(-12), validUntil:relDate(18), kodeCustomer:'CUS-001', namaCustomerManual:'', diskon:100000,
+     status:'Terkirim', catatan:'Menunggu konfirmasi dari customer', salesTrackerId:'ST-DEMO2',
+     items:[
+       {namaBarang:'Pipa PVC 4 Inch', qty:200, stok:'80', lokasi:'Gudang B - Rak 5', hargaBeli:45000, ongkosKirim:3000, materialHandling:1000, marginPersen:40},
+     ]},
+    {id:'QUO-DEMO3', tanggal:relDate(-19), validUntil:relDate(-2), kodeCustomer:'CUS-004', namaCustomerManual:'', diskon:50000,
+     status:'Diterima', catatan:'Deal — PO customer sudah diterima', salesTrackerId:'ST-DEMO3',
+     items:[
+       {namaBarang:'Kabel NYM 3x2.5mm', qty:20, stok:'15', lokasi:'Gudang A - Rak 1', hargaBeli:350000, ongkosKirim:10000, materialHandling:5000, marginPersen:40},
+       {namaBarang:'Cat Tembok 25kg', qty:15, stok:'30', lokasi:'Gudang A - Rak 2', hargaBeli:220000, ongkosKirim:5000, materialHandling:0, marginPersen:40},
+     ]},
+    {id:'QUO-DEMO4', tanggal:relDate(-8), validUntil:relDate(-1), kodeCustomer:'CUS-006', namaCustomerManual:'', diskon:0,
+     status:'Diterima', catatan:'Deal — dari tim Mitra (Erik)', salesTrackerId:'ST-DEMO5',
+     items:[
+       {namaBarang:'Besi Beton 12mm', qty:150, stok:'100', lokasi:'Gudang Utama', hargaBeli:85000, ongkosKirim:3000, materialHandling:2000, marginPersen:40},
+       {namaBarang:'Semen 50kg', qty:80, stok:'60', lokasi:'Gudang Utama', hargaBeli:65000, ongkosKirim:2000, materialHandling:0, marginPersen:40},
+     ]},
+  ];
+
+  // ---- Proses otomatis QUO-DEMO3 (Diterima) menjadi Penjualan + draft Pembelian, persis alur asli ----
+  const quo3 = state.data.quotation.find(q=>q.id==='QUO-DEMO3');
+  generateInvoiceFromQuotation(quo3);
+  generatePurchaseDraftFromQuotation(quo3);
+  // Lengkapi draft pembelian hasil auto-generate dengan supplier (mensimulasikan Procurement sudah memproses)
+  (state.data.pembelian||[]).filter(p=>p.quotationId==='QUO-DEMO3').forEach((p,i)=>{
+    p.kodeSupplier = i===0 ? 'SUP-004' : 'SUP-003';
+    p.status = 'Lunas';
+    p.tanggal = relDate(-18);
+  });
+  saveEntity('pembelian');
+  // Tandai satu dari dua Penjualan hasil auto-generate sebagai sudah lunas (simulasi sebagian pembayaran diterima)
+  const pjFromQuo3 = (state.data.penjualan||[]).filter(p=>p.quotationId==='QUO-DEMO3');
+  if(pjFromQuo3[0]) pjFromQuo3[0].status = 'Lunas';
+  if(pjFromQuo3[0]) pjFromQuo3[0].tanggal = relDate(-16);
+  if(pjFromQuo3[1]) pjFromQuo3[1].tanggal = relDate(-16);
+  saveEntity('penjualan');
+
+  // ---- Proses otomatis QUO-DEMO4 (Diterima, dari tim Mitra Erik) menjadi Penjualan + draft Pembelian ----
+  const quo4 = state.data.quotation.find(q=>q.id==='QUO-DEMO4');
+  generateInvoiceFromQuotation(quo4);
+  generatePurchaseDraftFromQuotation(quo4);
+  (state.data.pembelian||[]).filter(p=>p.quotationId==='QUO-DEMO4').forEach((p,i)=>{
+    p.kodeSupplier = i===0 ? 'SUP-002' : 'SUP-001';
+    p.status = 'Lunas';
+    p.tanggal = relDate(-7);
+  });
+  saveEntity('pembelian');
+  (state.data.penjualan||[]).filter(p=>p.quotationId==='QUO-DEMO4').forEach(p=>{ p.tanggal = relDate(-6); });
+  saveEntity('penjualan');
+
+  // ---- Pengiriman untuk hasil penjualan di atas ----
+  state.data.pengiriman = [
+    {id:'KR-DEMO1', idPenjualan: pjFromQuo3[0] ? pjFromQuo3[0].id : '', tanggalOrder:relDate(-17), tanggalKirim:relDate(-15), tanggalDiterima:relDate(-13),
+     ekspedisi:'Ekspedisi Internal', noResi:'-', tujuanAlamat:'Jl. Trans Kalimantan, Banjarbaru', statusPengiriman:'Diterima', catatan:'Dikirim tepat waktu'},
+  ];
+
+  // ---- Beberapa transaksi manual tambahan (bukan dari Quotation, contoh input langsung Admin) ----
+  state.data.pembelian.push(
+    {id:'PB-DEMO1', tanggal:relDate(-8), kodeSupplier:'SUP-002', kodeBarang:'BRG-006', qty:20, hargaSatuan:650000, status:'Belum Lunas', catatan:'Stok reguler bata ringan'}
+  );
+  state.data.penjualan.push(
+    {id:'PJ-DEMO1', tanggal:relDate(-6), kodeCustomer:'CUS-003', kodeBarang:'BRG-008', qty:100, hargaJual:25000, nikSales:'EMP-002', status:'Lunas', catatan:'Penjualan langsung, bayar cash'}
+  );
+
+  // ---- Operational Expense ----
+  state.data.operationalExpense = [
+    {id:'OE-DEMO1', tanggal:relDate(-40), kategoriBiaya:'Sewa', deskripsi:'Sewa gudang bulan lalu', jumlah:8000000, metodePembayaran:'Transfer', pic:'Dewi Lestari', status:'Lunas', catatan:''},
+    {id:'OE-DEMO2', tanggal:relDate(-10), kategoriBiaya:'Sewa', deskripsi:'Sewa gudang bulan ini', jumlah:8000000, metodePembayaran:'Transfer', pic:'Dewi Lestari', status:'Lunas', catatan:''},
+    {id:'OE-DEMO3', tanggal:relDate(-6), kategoriBiaya:'Listrik & Air', deskripsi:'Tagihan listrik gudang', jumlah:1500000, metodePembayaran:'Transfer', pic:'Dewi Lestari', status:'Lunas', catatan:''},
+    {id:'OE-DEMO4', tanggal:relDate(-4), kategoriBiaya:'Transportasi', deskripsi:'BBM & tol pengiriman', jumlah:750000, metodePembayaran:'Cash', pic:'Rudi Hartono', status:'Lunas', catatan:''},
+    {id:'OE-DEMO5', tanggal:relDate(-1), kategoriBiaya:'ATK', deskripsi:'Alat tulis kantor', jumlah:350000, metodePembayaran:'Cash', pic:'Andi Wijaya', status:'Belum Lunas', catatan:''},
+    {id:'OE-DEMO6', tanggal:relDate(-5), kategoriBiaya:'Transportasi', deskripsi:'Transport tim sales Mitra (Erik) kunjungan customer', jumlah:400000, metodePembayaran:'Cash', pic:'Hendra Saputra', status:'Lunas', catatan:'', kodeMitra:'MTR-001'},
+  ];
+
+  // ---- Buku Kas ----
+  state.data.bukuKas = [
+    {id:'BK-DEMO1', tanggal:relDate(-30), jenis:'Masuk', kategori:'Modal', referensi:'-', keterangan:'Setoran modal awal bulan', jumlahMasuk:20000000, jumlahKeluar:0, metodePembayaran:'Transfer', pic:'Dewi Lestari', catatan:''},
+    {id:'BK-DEMO2', tanggal:relDate(-10), jenis:'Keluar', kategori:'Operasional', referensi:'OE-DEMO2', keterangan:'Bayar sewa gudang', jumlahMasuk:0, jumlahKeluar:8000000, metodePembayaran:'Transfer', pic:'Dewi Lestari', catatan:''},
+    {id:'BK-DEMO3', tanggal:relDate(-6), jenis:'Keluar', kategori:'Operasional', referensi:'OE-DEMO3', keterangan:'Bayar listrik gudang', jumlahMasuk:0, jumlahKeluar:1500000, metodePembayaran:'Transfer', pic:'Dewi Lestari', catatan:''},
+    {id:'BK-DEMO4', tanggal:relDate(-4), jenis:'Keluar', kategori:'Operasional', referensi:'OE-DEMO4', keterangan:'BBM & tol pengiriman', jumlahMasuk:0, jumlahKeluar:750000, metodePembayaran:'Cash', pic:'Rudi Hartono', catatan:''},
+    {id:'BK-DEMO5', tanggal:relDate(-16), jenis:'Masuk', kategori:'Penjualan', referensi:'QUO-DEMO3', keterangan:'Pembayaran dari PT Mitra Konstruksi', jumlahMasuk:5250000, jumlahKeluar:0, metodePembayaran:'Transfer', pic:'Dewi Lestari', catatan:''},
+    {id:'BK-DEMO6', tanggal:relDate(-31), jenis:'Keluar', kategori:'Gaji', referensi:'Penggajian', keterangan:'Gaji karyawan bulan lalu', jumlahMasuk:0, jumlahKeluar:32000000, metodePembayaran:'Transfer', pic:'Dewi Lestari', catatan:''},
+  ];
+
+  // ---- Aset ----
+  state.data.aset = [
+    {kodeAset:'AST-001', namaAset:'Forklift Toyota 2.5 Ton', kategori:'Kendaraan', tanggalPerolehan:'2023-01-15', nilaiPerolehan:180000000, umurEkonomisTahun:8, lokasi:'Gudang Utama', nikPenanggungJawab:'EMP-005', kondisi:'Baik', status:'Aktif', catatan:''},
+    {kodeAset:'AST-002', namaAset:'Truck Engkel Pengiriman', kategori:'Kendaraan', tanggalPerolehan:'2022-06-01', nilaiPerolehan:220000000, umurEkonomisTahun:10, lokasi:'Gudang Utama', nikPenanggungJawab:'EMP-005', kondisi:'Baik', status:'Aktif', catatan:''},
+    {kodeAset:'AST-003', namaAset:'Komputer Kantor (Set 3 Unit)', kategori:'Elektronik', tanggalPerolehan:'2024-02-01', nilaiPerolehan:24000000, umurEkonomisTahun:4, lokasi:'Kantor Pusat', nikPenanggungJawab:'EMP-005', kondisi:'Baik', status:'Aktif', catatan:''},
+    {kodeAset:'AST-004', namaAset:'Rak Gudang Besi', kategori:'Peralatan Gudang', tanggalPerolehan:'2023-08-01', nilaiPerolehan:15000000, umurEkonomisTahun:6, lokasi:'Gudang Utama', nikPenanggungJawab:'EMP-005', kondisi:'Perlu Perbaikan', status:'Aktif', catatan:'Beberapa rak mulai berkarat'},
+  ];
+
+  // ---- Penggajian (bulan lalu, semua lunas) ----
+  const bulanLalu = relMonth(-1);
+  state.data.penggajian = ['EMP-001','EMP-002','EMP-003','EMP-004','EMP-005','EMP-006'].map((nik,i)=>({
+    id:'PG-DEMO'+(i+1), periode:bulanLalu, nik, potongan:100000, status:'Lunas', tanggalBayar:relDate(-31), catatan:'',
+  }));
+
+  // ---- Target Sales (bulan berjalan) ----
+  const bulanIni = relMonth(0);
+  state.data.targetSales = [
+    {id:'TS-DEMO1', bulan:bulanIni, nikSales:'EMP-001', targetPenjualan:50000000},
+    {id:'TS-DEMO2', bulan:bulanIni, nikSales:'EMP-006', targetPenjualan:40000000},
+  ];
+
+  await Promise.all(['masterKaryawan','masterMitra','users','masterBarang','masterSupplier','masterCustomer','salesTracker','quotation','operationalExpense','bukuKas','aset','penggajian','targetSales'].map(saveEntity));
+}
+async function loadData(){
+  try{ const u = await window.storage.get('sheetsUrl').catch(()=>null); state.sheetsUrl = u?u.value:''; }catch(e){}
+  try{ const s = await window.storage.get('session').catch(()=>null); if(s) state.user = JSON.parse(s.value); }catch(e){}
+  try{ const st = await window.storage.get('settings').catch(()=>null); if(st) state.settings = {...state.settings, ...JSON.parse(st.value)}; }catch(e){}
+  for(const key of ENTITY_KEYS){
+    try{ const r = await window.storage.get(key).catch(()=>null); state.data[key] = r?JSON.parse(r.value):[]; }
+    catch(e){ state.data[key] = []; }
+  }
+  for(const key of EXTRA_DATA_KEYS){
+    try{ const r = await window.storage.get(key).catch(()=>null); state.data[key] = r?JSON.parse(r.value):[]; }
+    catch(e){ state.data[key] = []; }
+  }
+  if(!state.data.users || state.data.users.length===0){
+    state.data.users = [
+      {id:'USR-ADMIN', username:'admin', password:'admin123', role:'Admin', namaLengkap:'Administrator'},
+      {id:'USR-PROC', username:'procurement', password:'proc123', role:'Procurement', namaLengkap:'Staff Procurement'},
+      {id:'USR-JUAL', username:'penjualan', password:'jual123', role:'Penjualan', namaLengkap:'Staff Penjualan'},
+      {id:'USR-SALES', username:'sales', password:'sales123', role:'Sales', namaLengkap:'Staff Sales Lapangan'},
+      {id:'USR-FA', username:'fa', password:'fa123', role:'FA', namaLengkap:'Staff Finance & Accounting'},
+      {id:'USR-GA', username:'ga', password:'ga123', role:'GA', namaLengkap:'Staff GA'},
+      {id:'USR-MITRA', username:'erik', password:'erik123', role:'Mitra', namaLengkap:'Erik (Mitra Marketing)'},
+    ];
+    await saveEntity('users');
+  }
+  if((state.data.masterBarang||[]).length===0 && (state.data.quotation||[]).length===0){
+    await seedDemoData();
+  }
+  state.loading = false;
+  render();
+}
+async function saveEntity(key){
+  try{ await window.storage.set(key, JSON.stringify(state.data[key])); }catch(e){ showToast('Gagal menyimpan data'); }
+}
+async function saveSession(){
+  try{ if(state.user) await window.storage.set('session', JSON.stringify(state.user)); else await window.storage.set('session', ''); }catch(e){}
+}
+async function saveSettings(){
+  try{ await window.storage.set('settings', JSON.stringify(state.settings)); }catch(e){ showToast('Gagal menyimpan pengaturan'); }
+}
+function calcHargaJual(hargaBeli, ongkosKirim, materialHandling, marginPersen){
+  const biaya = (Number(hargaBeli)||0)+(Number(ongkosKirim)||0)+(Number(materialHandling)||0);
+  const margin = (Number(marginPersen)||0)/100;
+  if(margin>=1) return Math.round(biaya);
+  return Math.round(biaya/(1-margin));
+}
+
+/* ============ AUTH ============ */
+function tryLogin(username, password){
+  const users = state.data.users||[];
+  const found = users.find(u=>u.username===username && u.password===password);
+  if(found){
+    state.user = {username:found.username, role:found.role, namaLengkap:found.namaLengkap||found.username, nik:found.nik||'', kodeMitra:found.kodeMitra||''};
+    state.loginError = '';
+    saveSession();
+    state.view='dashboard';
+    render();
+  } else {
+    state.loginError = 'Username atau password salah.';
+    render();
+  }
+}
+function doLogout(){ state.user=null; saveSession(); render(); }
+function canAccess(menuId){
+  if(!state.user) return false;
+  const m = MENU.find(mm=>mm.id===menuId);
+  if(!m) return true;
+  return m.roles.includes(state.user.role);
+}
+function subAccessible(menuId, sub){
+  if(!state.user) return false;
+  if(!sub.roles) return true;
+  return sub.roles.includes(state.user.role);
+}
+function subVisibleInNav(menuId, sub){
+  if(!subAccessible(menuId, sub)) return false;
+  if(sub.hideForRoles && sub.hideForRoles.includes(state.user.role)) return false;
+  return true;
+}
+function canAccessView(view){
+  if(!state.user) return false;
+  const parts = view.split('.');
+  const m = MENU.find(mm=>mm.id===parts[0]);
+  if(!m) return true;
+  if(!m.roles.includes(state.user.role)) return false;
+  if(parts[1] && m.submenu){
+    const sub = m.submenu.find(s=>s.id===parts[1]);
+    if(sub) return subAccessible(m.id, sub);
+  }
+  return true;
+}
+function firstAccessibleSub(m){
+  if(!m.submenu) return m.id;
+  const sub = m.submenu.find(s=>subVisibleInNav(m.id, s));
+  return sub ? m.id+'.'+sub.id : m.id;
+}
+function isStaff(){ return state.user && state.user.role!=='Admin'; }
+
+/* ============ RENDER SHELL ============ */
+function render(){
+  const app = document.getElementById('app');
+  if(!state.user){
+    app.innerHTML = renderLogin();
+    return;
+  }
+  app.innerHTML = `
+    ${renderSidebar()}
+    <div class="main">
+      ${renderTopbar()}
+      <div class="content">${state.loading?renderLoading():renderView()}</div>
+    </div>
+    ${renderBottomTabs()}
+    ${renderSheet()}
+    ${state.modal?renderModal():''}
+    ${state.toast?`<div class="toast"><span class="dot-amber"></span>${state.toast}</div>`:''}
+  `;
+}
+function renderLoading(){ return `<div class="empty-state"><div class="big">Memuat data…</div></div>`; }
+
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo"><img src="${LOGO_B64}" alt="logo"></div>
+      <h2>Sistem Operasional</h2>
+      <div class="sub">GRAFINDO JAYA TEKNIK</div>
+      <div class="login-error ${state.loginError?'show':''}">${state.loginError}</div>
+      <form id="loginForm">
+        <div class="field"><label>Username</label><input type="text" name="username" required autofocus></div>
+        <div class="field"><label>Password</label><input type="password" name="password" required></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">Masuk</button>
+      </form>
+      <div class="login-hint">Demo: admin/admin123 (Admin), procurement/proc123, penjualan/jual123, sales/sales123, fa/fa123, ga/ga123, erik/erik123 (Mitra)</div>
+    </div>
+  </div>`;
+}
+
+function renderSidebar(){
+  const visibleMenu = MENU.filter(m=>canAccess(m.id));
+  const initials = (state.user.namaLengkap||state.user.username).slice(0,2).toUpperCase();
+  return `
+  <div class="sidebar">
+    <div class="brand"><img src="${LOGO_B64}" alt="logo"><div class="brand-text"><div class="name">Grafindo Jaya Teknik</div><div class="sub">SISTEM OPERASIONAL</div></div></div>
+    <div class="user-chip">
+      <div class="user-avatar">${initials}</div>
+      <div class="user-meta"><div class="uname">${escapeHtml(state.user.namaLengkap||state.user.username)}</div><div class="urole">${state.user.role.toUpperCase()}</div></div>
+      <button class="logout-btn" data-action="logout" title="Keluar">&#8594;</button>
+    </div>
+    <div class="nav">
+      ${visibleMenu.map(m=>{
+        if(!m.submenu){
+          return `<div class="nav-item ${state.view===m.id?'active':''}" data-action="nav" data-target="${m.id}">${icon(m.icon)}<span>${m.label}</span></div>`;
+        }
+        const visibleSub = m.submenu.filter(s=>subVisibleInNav(m.id,s));
+        if(visibleSub.length===0) return '';
+        const open = state.expanded.has(m.id);
+        const hasActive = visibleSub.some(s=>state.view===m.id+'.'+s.id);
+        return `
+        <div class="nav-item ${hasActive?'active':''} ${open?'expanded':''}" data-action="toggle" data-target="${m.id}">
+          ${icon(m.icon)}<span>${m.label}</span>${icon('chevron')}
+        </div>
+        <div class="submenu ${open?'open':''}">
+          ${visibleSub.map(s=>`<div class="submenu-item ${state.view===m.id+'.'+s.id?'active':''}" data-action="nav" data-target="${m.id}.${s.id}">${s.label}</div>`).join('')}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="sidebar-foot">
+      <div class="sync-row" data-action="open-settings"><span class="sync-dot ${state.syncStatus}"></span><span>${syncLabel()}</span></div>
+    </div>
+  </div>`;
+}
+function syncLabel(){
+  if(state.syncStatus==='connected') return 'Google Sheets tersambung';
+  if(state.syncStatus==='error') return 'Gagal sinkron';
+  return 'Penyimpanan lokal';
+}
+
+function renderBottomTabs(){
+  const bottomIds = BOTTOM_BY_ROLE[state.user.role] || ['dashboard'];
+  const items = MENU.filter(m=>bottomIds.includes(m.id) && canAccess(m.id));
+  return `<div class="bottom-tabs">
+    ${items.map(m=>{
+      const target = firstAccessibleSub(m);
+      const active = state.view===target || state.view.startsWith(m.id+'.');
+      return `<div class="bt-item ${active?'active':''}" data-action="nav" data-target="${target}">${icon(m.icon)}<span>${m.label.split(' ')[0]}</span></div>`;
+    }).join('')}
+    <div class="bt-item" data-action="open-sheet">${icon('more')}<span>Lainnya</span></div>
+  </div>`;
+}
+function renderSheet(){
+  const bottomIds = BOTTOM_BY_ROLE[state.user.role] || ['dashboard'];
+  const others = MENU.filter(m=>!bottomIds.includes(m.id) && canAccess(m.id));
+  return `<div class="sheet-overlay" style="display:${state.sheetOpen?'block':'none'}" data-action="close-sheet">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      ${others.map(m=>{
+        const target = firstAccessibleSub(m);
+        return `<div class="sheet-item" data-action="nav" data-target="${target}">${icon(m.icon)}<span>${m.label}</span></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function currentMenuSub(){
+  const parts = state.view.split('.');
+  const menu = MENU.find(m=>m.id===parts[0]);
+  const sub = menu && menu.submenu ? menu.submenu.find(s=>s.id===parts[1]) : null;
+  return {menu, sub};
+}
+function renderTopbar(){
+  const d = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const {menu, sub} = currentMenuSub();
+  const title = sub ? sub.label : (menu?menu.label:'Dashboard');
+  const crumb = sub ? `${menu.label} / ${sub.label}` : '';
+  return `<div class="topbar"><div>${crumb?`<div class="crumb">${crumb.toUpperCase()}</div>`:''}<h1>${title}</h1></div><div class="date mono" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-500);">${d}</div></div>`;
+}
+
+/* ============ VIEW DISPATCH ============ */
+function renderView(){
+  if(!canAccessView(state.view)) return `<div class="soon-banner"><div class="big">Akses dibatasi</div><div>Menu ini tidak tersedia untuk role ${state.user.role}.</div></div>`;
+  if(state.view==='dashboard') return renderDashboard();
+  if(state.view==='laporankomisi') return renderLaporanKomisi();
+  const [menuId, subId] = state.view.split('.');
+  if(menuId==='master'){
+    if(subId==='masterBarang') return renderGenericPage('masterBarang');
+    if(subId==='masterSupplier') return renderGenericPage('masterSupplier');
+    if(subId==='masterCustomer') return renderGenericPage('masterCustomer');
+    if(subId==='masterMitra') return renderGenericPage('masterMitra');
+  }
+  if(menuId==='pembelian'){
+    if(subId==='daftar') return renderDaftar('pembelian');
+    if(subId==='tambah') return renderTambah('pembelian');
+    if(subId==='laporan') return renderLaporan('pembelian');
+  }
+  if(menuId==='penjualan'){
+    if(subId==='daftar') return renderDaftar('penjualan');
+    if(subId==='tambah') return renderTambah('penjualan');
+    if(subId==='laporan') return renderLaporan('penjualan');
+  }
+  if(menuId==='quotation'){
+    if(subId==='daftar') return renderQuotationDaftar();
+    if(subId==='tambah') return renderQuotationForm();
+    if(subId==='margin') return renderMarginSettings();
+  }
+  if(menuId==='expense'){
+    if(subId==='daftar') return renderDaftar('operationalExpense', state.user.role==='Mitra' ? (it=>it.kodeMitra===state.user.kodeMitra) : null);
+    if(subId==='tambah') return renderTambah('operationalExpense');
+    if(subId==='laporan') return renderLaporan('operationalExpense');
+  }
+  if(menuId==='keuangan'){
+    if(subId==='daftar') return renderDaftar('bukuKas');
+    if(subId==='tambah') return renderTambah('bukuKas');
+    if(subId==='laporan') return renderLaporan('bukuKas');
+  }
+  if(menuId==='karyawan'){
+    if(subId==='data'){
+      if(state.user.role==='Mitra') return renderDaftar('masterKaryawan', it=>it.kodeMitra===state.user.kodeMitra);
+      return renderGenericPage('masterKaryawan');
+    }
+    if(subId==='penggajian') return renderDaftar('penggajian');
+    if(subId==='penggajianTambah') return renderTambah('penggajian');
+    if(subId==='penggajianLaporan') return renderLaporan('penggajian');
+  }
+  if(menuId==='aset'){
+    if(subId==='daftar') return renderDaftar('aset');
+    if(subId==='tambah') return renderTambah('aset');
+  }
+  if(menuId==='salestracker'){
+    if(subId==='pipeline') return renderSalesTrackerDaftar();
+    if(subId==='tambah') return renderSalesTrackerForm();
+    if(subId==='target') return renderTargetSalesPage();
+  }
+  if(menuId==='leadtime'){
+    if(subId==='daftar') return renderDaftar('pengiriman');
+    if(subId==='tambah') return renderTambah('pengiriman');
+  }
+  if(menuId==='pengguna'){
+    if(subId==='daftar') return renderGenericPage('users');
+    if(subId==='tambah') return renderTambah('users');
+  }
+  return `<div class="soon-banner"><div class="big">Halaman tidak ditemukan</div></div>`;
+}
+
+function renderGenericPage(entityKey){
+  return renderDaftar(entityKey) + `<div class="panel"><div class="panel-head"><h3>Tambah ${SCHEMAS[entityKey].label}</h3></div><div class="modal-body">${renderFormFields(entityKey, null, 'genericInlineForm')}
+    <div class="form-actions"><button class="btn btn-primary" data-action="save-generic-inline" data-entity="${entityKey}">Tambah</button></div>
+  </div></div>`;
+}
+
+/* ============ DASHBOARD ============ */
+const DASH_PERM = {
+  Admin:       {beli:true,  jual:true,  profit:true,  expense:true,  tx:'all'},
+  FA:          {beli:true,  jual:true,  profit:true,  expense:true,  tx:'all'},
+  Procurement: {beli:true,  jual:false, profit:false, expense:false, tx:'beli'},
+  Penjualan:   {beli:false, jual:true,  profit:false, expense:false, tx:'jual'},
+  Sales:       {beli:false, jual:true,  profit:false, expense:false, tx:'jual'},
+  GA:          {beli:false, jual:false, profit:false, expense:false, tx:'none'},
+  Mitra:       {beli:false, jual:false, profit:false, expense:false, tx:'none'},
+};
+function renderMitraDashboard(){
+  const mitra = currentMitraRecord();
+  const pct = mitra ? Number(mitra.persentaseMargin)||0 : 0;
+  const curMonth = new Date().toISOString().slice(0,7);
+  const quotes = (state.data.quotation||[]).filter(q=>q.status==='Diterima' && quotationBelongsToMitra(q, state.user.kodeMitra));
+  const quotesThisMonth = quotes.filter(q=>monthKey(q.tanggal)===curMonth);
+  const totalMarginBulanIni = quotesThisMonth.reduce((a,q)=>a+quoMarginBersih(q),0);
+  const bagianMitraBulanIni = totalMarginBulanIni*pct/100;
+  const totalPenjualanBulanIni = quotesThisMonth.reduce((a,q)=>a+quoTotal(q),0);
+  const expenseBulanIni = (state.data.operationalExpense||[]).filter(e=>e.kodeMitra===state.user.kodeMitra && monthKey(e.tanggal)===curMonth).reduce((a,e)=>a+(Number(e.jumlah)||0),0);
+  const cards = [
+    `<div class="stat"><div class="label">Deal bulan ini</div><div class="value mono">${quotesThisMonth.length}</div></div>`,
+    `<div class="stat"><div class="label">Nilai Penjualan bulan ini</div><div class="value mono">${rupiah(totalPenjualanBulanIni)}</div></div>`,
+    `<div class="stat"><div class="label">Margin Bersih bulan ini</div><div class="value mono">${rupiah(totalMarginBulanIni)}</div></div>`,
+    `<div class="stat"><div class="label">Bagian Anda (${pct}%)</div><div class="value mono pos">${rupiah(bagianMitraBulanIni)}</div></div>`,
+  ];
+  const recent = quotes.slice().sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||'')).slice(0,6);
+  return `
+    <div class="stat-row" style="grid-template-columns:repeat(4,1fr);">${cards.join('')}</div>
+    <div class="panel"><div class="panel-head"><h3>Biaya tim bulan ini</h3></div>
+      <div style="padding:16px;"><div style="font-size:19px;font-weight:600;">${rupiah(expenseBulanIni)}</div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Deal terbaru dari tim Anda</h3></div>
+    ${recent.length===0?`<div class="empty-state"><div class="big">Belum ada deal</div></div>`:`
+    <table class="ledger"><thead><tr><th>Tanggal</th><th>Customer</th><th class="num">Nilai Penjualan</th><th class="num">Margin Bersih</th><th class="num">Bagian Anda</th></tr></thead>
+    <tbody>${recent.map(q=>{
+      const custName = q.kodeCustomer ? lookupNameOnly({ref:'masterCustomer',refLabel:'namaCustomer'}, q.kodeCustomer) : (q.namaCustomerManual||'-');
+      const margin = quoMarginBersih(q);
+      return `<tr><td class="mono">${fmtDate(q.tanggal)}</td><td>${escapeHtml(custName)}</td><td class="num">${rupiah(quoTotal(q))}</td><td class="num">${rupiah(margin)}</td><td class="num">${rupiah(margin*pct/100)}</td></tr>`;
+    }).join('')}</tbody></table>`}
+    </div>
+    <div style="font-size:11.5px;color:var(--ink-500);margin-top:4px;">Lihat rincian lengkap di menu <b>Laporan Komisi</b>.</div>
+  `;
+}
+function renderDashboard(){
+  if(state.user.role==='Mitra') return renderMitraDashboard();
+  const perm = DASH_PERM[state.user.role] || {beli:false,jual:false,profit:false,expense:false,tx:'none'};
+  const now = new Date(); const curMonth = now.toISOString().slice(0,7);
+  const pembelian = state.data.pembelian||[], penjualan = state.data.penjualan||[];
+  const pThis = pembelian.filter(p=>monthKey(p.tanggal)===curMonth);
+  const jThis = penjualan.filter(p=>monthKey(p.tanggal)===curMonth);
+  const totalBeli = pThis.reduce((a,p)=>a+(Number(p.qty)||0)*(Number(p.hargaSatuan)||0),0);
+  const totalJual = jThis.reduce((a,p)=>a+(Number(p.qty)||0)*(Number(p.hargaJual)||0),0);
+  const profit = totalJual-totalBeli;
+  const expense = (state.data.operationalExpense||[]).filter(e=>monthKey(e.tanggal)===curMonth).reduce((a,e)=>a+(Number(e.jumlah)||0),0);
+
+  const cards = [];
+  if(perm.beli) cards.push(`<div class="stat"><div class="label">Pembelian bulan ini</div><div class="value mono">${rupiah(totalBeli)}</div></div>`);
+  if(perm.jual) cards.push(`<div class="stat"><div class="label">Penjualan bulan ini</div><div class="value mono">${rupiah(totalJual)}</div></div>`);
+  if(perm.profit) cards.push(`<div class="stat"><div class="label">Profit kotor</div><div class="value mono ${profit>=0?'pos':'neg'}">${profit>=0?'+':''}${rupiah(profit)}</div></div>`);
+  if(perm.expense) cards.push(`<div class="stat"><div class="label">Biaya operasional</div><div class="value mono">${rupiah(expense)}</div></div>`);
+
+  let recent = [];
+  if(perm.tx==='all'){
+    recent = [
+      ...pembelian.map(p=>({...p,_type:'Pembelian',_total:(Number(p.qty)||0)*(Number(p.hargaSatuan)||0)})),
+      ...penjualan.map(p=>({...p,_type:'Penjualan',_total:(Number(p.qty)||0)*(Number(p.hargaJual)||0)})),
+    ];
+  } else if(perm.tx==='beli'){
+    recent = pembelian.map(p=>({...p,_type:'Pembelian',_total:(Number(p.qty)||0)*(Number(p.hargaSatuan)||0)}));
+  } else if(perm.tx==='jual'){
+    recent = penjualan.map(p=>({...p,_type:'Penjualan',_total:(Number(p.qty)||0)*(Number(p.hargaJual)||0)}));
+  }
+  recent = recent.sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||'')).slice(0,6);
+
+  const statRowStyle = cards.length ? `style="grid-template-columns:repeat(${cards.length},1fr);"` : '';
+
+  return `
+    ${cards.length ? `<div class="stat-row" ${statRowStyle}>${cards.join('')}</div>` : ''}
+    ${perm.tx!=='none' ? `<div class="panel"><div class="panel-head"><h3>Transaksi terbaru</h3></div>
+    ${recent.length===0?`<div class="empty-state"><div class="big">Belum ada transaksi</div></div>`:`
+    <table class="ledger"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Barang</th><th class="num">Total</th></tr></thead>
+    <tbody>${recent.map(r=>`<tr><td class="mono">${fmtDate(r.tanggal)}</td><td>${r._type}</td><td>${lookupNameOnly({ref:'masterBarang',refLabel:'namaBarang'},r.kodeBarang)}</td><td class="num">${rupiah(r._total)}</td></tr>`).join('')}</tbody></table>`}
+    </div>` : ''}
+  `;
+}
+
+/* ============ LAPORAN KOMISI (Mitra) ============ */
+function renderLaporanKomisi(){
+  const mitraList = state.data.masterMitra||[];
+  let kodeMitra = state.user.role==='Mitra' ? state.user.kodeMitra : state.reportMitra;
+  if(state.user.role==='Admin' && !kodeMitra && mitraList.length) kodeMitra = mitraList[0].kodeMitra;
+  const mitra = mitraList.find(m=>m.kodeMitra===kodeMitra);
+  const selector = state.user.role==='Admin' ? `<div class="field" style="max-width:280px;"><label>Pilih Mitra</label><select data-action="select-laporan-mitra">
+      ${mitraList.map(m=>`<option value="${m.kodeMitra}" ${kodeMitra===m.kodeMitra?'selected':''}>${escapeHtml(m.namaMitra)}</option>`).join('')}
+    </select></div>` : '';
+  if(!mitra){
+    return `<div class="panel">${selector}<div class="empty-state"><div class="big">Belum ada data Mitra</div></div></div>`;
+  }
+  const pct = Number(mitra.persentaseMargin)||0;
+  const quotes = (state.data.quotation||[]).filter(q=>q.status==='Diterima' && quotationBelongsToMitra(q, kodeMitra)).sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
+  let totalMargin=0, totalBagian=0;
+  const rows = quotes.map(q=>{
+    const custName = q.kodeCustomer ? lookupNameOnly({ref:'masterCustomer',refLabel:'namaCustomer'}, q.kodeCustomer) : (q.namaCustomerManual||'-');
+    const items = (q.items||[]).map(it=>`${escapeHtml(it.namaBarang)} (${it.qty})`).join(', ');
+    const nilai = quoTotal(q);
+    const margin = quoMarginBersih(q);
+    const bagian = margin*pct/100;
+    totalMargin+=margin; totalBagian+=bagian;
+    return `<tr><td class="mono">${fmtDate(q.tanggal)}</td><td>${escapeHtml(custName)}</td><td>${items}</td><td class="num">${rupiah(nilai)}</td><td class="num">${rupiah(margin)}</td><td class="num">${rupiah(bagian)}</td></tr>`;
+  }).join('');
+  return `
+  ${selector?`<div class="panel">${selector}</div>`:''}
+  <div class="stat-row" style="grid-template-columns:repeat(3,1fr);">
+    <div class="stat"><div class="label">Total Transaksi Diterima</div><div class="value mono">${quotes.length}</div></div>
+    <div class="stat"><div class="label">Total Margin Bersih</div><div class="value mono">${rupiah(totalMargin)}</div></div>
+    <div class="stat"><div class="label">Total Bagian Mitra (${pct}%)</div><div class="value mono pos">${rupiah(totalBagian)}</div></div>
+  </div>
+  <div class="panel"><div class="panel-head"><h3>Rincian Komisi — ${escapeHtml(mitra.namaMitra)}</h3></div>
+  ${quotes.length===0?`<div class="empty-state"><div class="big">Belum ada transaksi diterima dari tim ini</div></div>`:`
+  <table class="ledger"><thead><tr><th>Tanggal</th><th>Customer</th><th>Barang</th><th class="num">Harga Jual (Total)</th><th class="num">Margin Bersih</th><th class="num">Bagian Mitra</th></tr></thead>
+  <tbody>${rows}</tbody></table>`}
+  </div>
+  <div style="font-size:11px;color:var(--ink-500);margin-top:6px;">Perhitungan: Margin Bersih = Total Harga Jual − Total Biaya (Harga Beli + Ongkos Kirim + Material Handling). Bagian Mitra = Margin Bersih × ${pct}%.</div>
+  `;
+}
+
+/* ============ GENERIC FORM RENDERING ============ */
+function renderFormFields(entityKey, item, idPrefix){
+  const schema = SCHEMAS[entityKey];
+  const d = item || {};
+  return schema.fields.map(f=>{
+    const val = d[f.key]!==undefined?d[f.key]:'';
+    const disabled = (item && schema.idField===f.key) ? 'disabled' : '';
+    if(f.type==='select'){
+      return `<div class="field"><label>${f.label}</label><select name="${f.key}" data-field="${f.key}">
+        ${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select></div>`;
+    }
+    if(f.type==='lookup'){
+      const refData = f.ref==='penjualan' ? (state.data.penjualan||[]) : (state.data[f.ref]||[]);
+      const refIdF = f.ref==='penjualan' ? 'id' : (SCHEMAS[f.ref].idField||'id');
+      return `<div class="field"><label>${f.label}</label><select name="${f.key}" data-field="${f.key}" data-lookup-entity="${entityKey}">
+        <option value="">- pilih -</option>
+        ${refData.map(r=>`<option value="${r[refIdF]}" ${String(val)===String(r[refIdF])?'selected':''}>${lookupDisplay(f, r[refIdF])}</option>`).join('')}
+      </select></div>`;
+    }
+    const inputType = f.type==='number'?'number':(f.type==='date'?'date':'text');
+    return `<div class="field"><label>${f.label}</label><input type="${inputType}" name="${f.key}" data-field="${f.key}" class="${f.type==='number'?'mono-input':''}" value="${escapeHtml(val)}" ${disabled}></div>`;
+  }).join('');
+}
+
+/* ============ GENERIC DAFTAR / TAMBAH / LAPORAN ============ */
+function computedVal(entityKey, item, key){
+  const schema = SCHEMAS[entityKey];
+  const c = (schema.computed||[]).find(c=>c.key===key);
+  return c ? c.fn(item) : item[key];
+}
+function colDisplay(entityKey, item, colKey, extraCtx){
+  const schema = SCHEMAS[entityKey];
+  const field = schema.fields.find(f=>f.key===colKey);
+  if(colKey==='saldo' && entityKey==='bukuKas') return rupiah(extraCtx.saldo);
+  if(field){
+    if(field.type==='lookup') return escapeHtml(lookupDisplay(field, item[colKey]));
+    if(field.type==='date') return fmtDate(item[colKey]);
+    if(field.type==='number') return rupiah(item[colKey]);
+    return escapeHtml(item[colKey]||'-');
+  }
+  const c = (schema.computed||[]).find(c=>c.key===colKey);
+  if(c){
+    const v = c.fn(item);
+    if(colKey==='pencapaian') return (v*100).toFixed(1)+'%';
+    if(typeof v==='number') return rupiah(v);
+    return v;
+  }
+  return item[colKey]||'-';
+}
+function colLabel(entityKey, colKey){
+  const schema = SCHEMAS[entityKey];
+  const field = schema.fields.find(f=>f.key===colKey);
+  if(field) return field.label;
+  if(colKey==='saldo') return 'Saldo Berjalan';
+  const c = (schema.computed||[]).find(c=>c.key===colKey);
+  return c ? c.label : colKey;
+}
+
+function renderDaftar(entityKey, extraFilter){
+  const schema = SCHEMAS[entityKey];
+  let list = (state.data[entityKey]||[]).slice();
+  if(extraFilter) list = list.filter(extraFilter);
+  const q = state.search.trim().toLowerCase();
+  if(q){
+    list = list.filter(it=>schema.listCols.some(c=>String(it[c]||'').toLowerCase().includes(q)));
+  }
+  const dateField = schema.fields.find(f=>f.type==='date');
+  if(dateField) list.sort((a,b)=>(b[dateField.key]||'').localeCompare(a[dateField.key]||''));
+
+  // running saldo for bukuKas (chronological order)
+  let saldoMap = {};
+  if(entityKey==='bukuKas'){
+    const chrono = (state.data.bukuKas||[]).slice().sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
+    let running=0;
+    chrono.forEach(it=>{ running += (Number(it.jumlahMasuk)||0)-(Number(it.jumlahKeluar)||0); saldoMap[it.id]=running; });
+  }
+
+  const canDelete = !isStaff();
+  const canEdit = entityKey==='targetSales' ? state.user.role==='Admin' : (state.user.role!=='Mitra');
+  const printType = schema.printable;
+
+  return `
+    <div class="toolbar">
+      <input class="search-input" data-action="search" placeholder="Cari…" value="${escapeHtml(state.search)}">
+    </div>
+    <div class="panel">
+      ${list.length===0?`<div class="empty-state"><div class="big">Belum ada data ${schema.label.toLowerCase()}</div></div>`:`
+      <table class="ledger"><thead><tr>${schema.listCols.map(c=>`<th class="${['number'].includes((schema.fields.find(f=>f.key===c)||{}).type)||['total','nilaiBuku','totalGaji','gajiPokok','tunjangan','realisasi','saldo','targetPenjualan'].includes(c)?'num':''}">${colLabel(entityKey,c)}</th>`).join('')}<th></th></tr></thead>
+      <tbody>${list.map(it=>{
+        const ctx = entityKey==='bukuKas'?{saldo:saldoMap[it.id]}:{};
+        return `<tr>${schema.listCols.map(c=>{
+          const isStatusCol = c==='status'||c==='statusPengiriman'||c==='statusProspek'||c==='statusKaryawan';
+          const raw = colDisplay(entityKey,it,c,ctx);
+          const cellClass = ['number'].includes((schema.fields.find(f=>f.key===c)||{}).type)||['total','nilaiBuku','totalGaji','gajiPokok','tunjangan','realisasi','saldo','targetPenjualan'].includes(c)?'num':'';
+          if(isStatusCol){
+            const cls = raw==='Lunas'||raw==='Aktif'||raw==='Diterima'||raw==='Deal'?'ok':(raw==='Belum Lunas'||raw==='Nonaktif'||raw==='Batal'||raw==='Terlambat'?'bad':'mid');
+            return `<td><span class="pill ${cls}">${raw}</span></td>`;
+          }
+          return `<td class="${cellClass}">${raw}</td>`;
+        }).join('')}
+        <td><div class="row-actions">
+          ${printType?`<button class="icon-btn print" data-action="print-doc" data-doctype="${printType}" data-id="${it.id||it[schema.idField]}" title="Cetak">${icon('print')}</button>`:''}
+          ${canEdit?`<button class="icon-btn" data-action="edit" data-entity="${entityKey}" data-id="${it.id||it[schema.idField]}">${icon('edit')}</button>`:''}
+          ${canDelete?`<button class="icon-btn" data-action="delete" data-entity="${entityKey}" data-id="${it.id||it[schema.idField]}">${icon('trash')}</button>`:''}
+        </div></td></tr>`;
+      }).join('')}</tbody></table>`}
+    </div>
+  `;
+}
+
+function renderTambah(entityKey){
+  const schema = SCHEMAS[entityKey];
+  return `<div class="form-page"><div class="panel"><div class="panel-head"><h3>Form ${schema.label.toLowerCase()}</h3></div>
+    <div class="modal-body">
+      <form id="entryForm">
+        ${renderFormFields(entityKey, null)}
+        ${schema.computed?schema.computed.map(c=>`<div class="calc-total" data-live-computed="${c.key}">${c.label}: <b>-</b></div>`).join(''):''}
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" data-action="save-entry" data-entity="${entityKey}">Simpan</button>
+          <button type="button" class="btn btn-ghost" data-action="nav" data-target="${defaultDaftarView(entityKey)}">Batal</button>
+        </div>
+      </form>
+    </div></div></div>`;
+}
+function defaultDaftarView(entityKey){
+  const map = {pembelian:'pembelian.daftar', penjualan:'penjualan.daftar', operationalExpense:'expense.daftar', bukuKas:'keuangan.daftar', aset:'aset.daftar', salesTracker:'salestracker.pipeline', pengiriman:'leadtime.daftar', penggajian:'karyawan.penggajian', users:'pengguna.daftar'};
+  return map[entityKey] || 'dashboard';
+}
+
+function renderLaporan(entityKey){
+  const schema = SCHEMAS[entityKey];
+  const list = state.data[entityKey]||[];
+  const dateField = schema.fields.find(f=>f.type==='date');
+  const months = dateField ? Array.from(new Set(list.map(i=>monthKey(i[dateField.key])))).filter(Boolean).sort().reverse() : [];
+  const period = state.reportMonth;
+  const filtered = (period==='semua'||!dateField) ? list : list.filter(i=>monthKey(i[dateField.key])===period);
+
+  const sumField = schema.reportSumField || 'total';
+  const sumFn = (it)=>{
+    const c = (schema.computed||[]).find(c=>c.key===sumField);
+    return c ? c.fn(it) : (Number(it[sumField])||0);
+  };
+  const totalNilai = filtered.reduce((a,it)=>a+sumFn(it),0);
+
+  const groupField = schema.reportGroupField;
+  const groupRows = {};
+  if(groupField){
+    filtered.forEach(it=>{
+      const gField = schema.fields.find(f=>f.key===groupField);
+      const key = gField && gField.type==='lookup' ? lookupNameOnly(gField, it[groupField]) : (it[groupField]||'-');
+      groupRows[key]=groupRows[key]||0; groupRows[key]+=sumFn(it);
+    });
+  }
+  const groupArr = Object.entries(groupRows).sort((a,b)=>b[1]-a[1]);
+
+  return `
+    <div class="toolbar">
+      <select class="select-input" data-action="report-month">
+        <option value="semua" ${period==='semua'?'selected':''}>Semua periode</option>
+        ${months.map(m=>`<option value="${m}" ${period===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+    <div class="stat-row" style="grid-template-columns:repeat(2,1fr);">
+      <div class="stat"><div class="label">Total transaksi</div><div class="value mono">${filtered.length}</div></div>
+      <div class="stat"><div class="label">Total nilai</div><div class="value mono">${rupiah(totalNilai)}</div></div>
+    </div>
+    ${groupField?`<div class="panel"><div class="panel-head"><h3>Rekap per ${colLabel(entityKey,groupField)}</h3></div>
+    ${groupArr.length===0?`<div class="empty-state small">Tidak ada data.</div>`:`
+    <table class="ledger"><thead><tr><th>${colLabel(entityKey,groupField)}</th><th class="num">Total</th></tr></thead>
+    <tbody>${groupArr.map(([k,v])=>`<tr><td>${escapeHtml(k)}</td><td class="num">${rupiah(v)}</td></tr>`).join('')}</tbody></table>`}
+    </div>`:''}
+  `;
+}
+
+/* ============ TARGET SALES (special combined view) ============ */
+function renderTargetSalesPage(){
+  const role = state.user.role;
+  const isOwner = role==='Sales';
+  const filterFn = isOwner ? (t=>t.nikSales===state.user.nik) : null;
+  const currentYear = new Date().getFullYear().toString();
+  const yearList = (state.data.targetSales||[]).filter(t=>!isOwner || t.nikSales===state.user.nik).filter(t=>(t.bulan||'').startsWith(currentYear));
+  const yearTarget = yearList.reduce((a,t)=>a+(Number(t.targetPenjualan)||0),0);
+  const yearRealisasi = yearList.reduce((a,t)=>{
+    const c = SCHEMAS.targetSales.computed.find(c=>c.key==='realisasi');
+    return a + c.fn(t);
+  },0);
+  const yearPencapaian = yearTarget ? (yearRealisasi/yearTarget) : 0;
+
+  const summary = `<div class="stat-row" style="grid-template-columns:repeat(3,1fr);">
+    <div class="stat"><div class="label">Target tahun ${currentYear}</div><div class="value mono">${rupiah(yearTarget)}</div></div>
+    <div class="stat"><div class="label">Realisasi tahun ${currentYear}</div><div class="value mono">${rupiah(yearRealisasi)}</div></div>
+    <div class="stat"><div class="label">Pencapaian</div><div class="value mono ${yearPencapaian>=1?'pos':''}">${(yearPencapaian*100).toFixed(1)}%</div></div>
+  </div>`;
+
+  const addForm = role==='Admin' ? `<div class="panel"><div class="panel-head"><h3>Tambah Target Sales</h3></div><div class="modal-body">
+    ${renderFormFields('targetSales', null)}
+    <div class="form-actions"><button class="btn btn-primary" data-action="save-generic-inline" data-entity="targetSales">Tambah</button></div>
+  </div></div>` : '';
+
+  return summary + renderDaftar('targetSales', filterFn) + addForm;
+}
+
+/* ============ SALES TRACKER (bespoke: header + item kebutuhan) ============ */
+function renderSalesTrackerDaftar(){
+  let list = (state.data.salesTracker||[]).slice();
+  if(state.user.role==='Mitra'){
+    const niks = mitraTeamNiks(state.user.kodeMitra);
+    list = list.filter(t=>niks.includes(t.nikSales));
+  }
+  list = list.sort((a,b)=>(b.tanggalInput||'').localeCompare(a.tanggalInput||''));
+  const canModify = !['Penjualan','Mitra'].includes(state.user.role);
+  return `<div class="panel"><div class="panel-head"><h3>Pipeline Prospek</h3></div>
+    ${list.length===0?`<div class="empty-state"><div class="big">Belum ada data prospek</div></div>`:`
+    <table class="ledger"><thead><tr><th>Tanggal</th><th>Sales</th><th>Customer/Prospek</th><th>Kebutuhan</th><th>Status</th><th>Follow Up</th><th></th></tr></thead>
+    <tbody>${list.map(t=>{
+      const custName = t.kodeCustomer ? lookupNameOnly({ref:'masterCustomer',refLabel:'namaCustomer'}, t.kodeCustomer) : (t.namaProspek||'-');
+      const kebutuhan = (t.items||[]).map(it=>`${escapeHtml(it.namaBarang)} (${it.qty})`).join(', ') || '-';
+      const salesName = lookupNameOnly({ref:'masterKaryawan',refLabel:'namaKaryawan'}, t.nikSales);
+      const cls = t.statusProspek==='Deal'?'ok':(t.statusProspek==='Batal'?'bad':'mid');
+      return `<tr><td class="mono">${fmtDate(t.tanggalInput)}</td><td>${escapeHtml(salesName)}</td><td>${escapeHtml(custName)}</td><td>${kebutuhan}</td>
+      <td><span class="pill ${cls}">${t.statusProspek}</span></td><td class="mono">${fmtDate(t.tanggalFollowUpBerikutnya)}</td>
+      <td><div class="row-actions">
+        ${!canModify ? (t.quotationId?`<span class="pill ok" title="${t.quotationId}">Quotation dibuat</span>`:'') : (t.quotationId?`<span class="pill ok" title="${t.quotationId}">Quotation dibuat</span>`:`<button class="btn btn-ghost btn-sm" data-action="make-quotation" data-id="${t.id}">Jadikan Quotation</button>`)}
+        ${canModify?`<button class="icon-btn" data-action="edit" data-entity="salesTracker" data-id="${t.id}">${icon('edit')}</button>`:''}
+        ${!isStaff()?`<button class="icon-btn" data-action="delete" data-entity="salesTracker" data-id="${t.id}">${icon('trash')}</button>`:''}
+      </div></td></tr>`;
+    }).join('')}</tbody></table>`}
+  </div>`;
+}
+function renderSalesTrackerForm(item){
+  const d = item || {tanggalInput:todayStr(), statusProspek:'Prospek', items:[{namaBarang:'',qty:1}]};
+  const custData = state.data.masterCustomer||[];
+  const karyawanData = state.data.masterKaryawan||[];
+  return `<div class="form-page" style="max-width:560px;"><div class="panel"><div class="panel-head"><h3>${item?'Ubah':'Tambah'} Prospek</h3></div>
+  <div class="modal-body">
+    <form id="trackerForm">
+      <div class="field-row">
+        <div class="field"><label>Tanggal Input</label><input type="date" name="tanggalInput" data-field="tanggalInput" class="mono-input" value="${d.tanggalInput}"></div>
+        <div class="field"><label>Sales</label><select name="nikSales" data-field="nikSales">
+          <option value="">- pilih -</option>
+          ${karyawanData.map(k=>`<option value="${k.nik}" ${d.nikSales===k.nik?'selected':''}>${k.nik} - ${k.namaKaryawan}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="field"><label>Customer (jika sudah terdaftar)</label><select name="kodeCustomer" data-field="kodeCustomer">
+        <option value="">- belum ada di Master Customer -</option>
+        ${custData.map(c=>`<option value="${c.kodeCustomer}" ${d.kodeCustomer===c.kodeCustomer?'selected':''}>${c.kodeCustomer} - ${c.namaCustomer}</option>`).join('')}
+      </select></div>
+      ${state.user.role==='Sales' ? `
+        ${d.namaProspek ? `<div class="field"><label>Nama Prospek (belum terdaftar di Master)</label><input type="text" name="namaProspek" data-field="namaProspek" value="${escapeHtml(d.namaProspek)}" disabled></div>` : `<input type="hidden" name="namaProspek" data-field="namaProspek" value="">`}
+        <div style="font-size:12px;color:var(--ink-500);background:var(--kraft-200);padding:10px 12px;border-radius:4px;margin-bottom:14px;">
+          Customer belum ada di daftar di atas? <b>Hubungi Tim FA</b> untuk didaftarkan ke Master Data Customer terlebih dahulu, baru bisa dipilih di sini.
+        </div>
+      ` : `
+        <div class="field"><label>Nama Prospek (jika belum ada di Master Customer)</label><input type="text" name="namaProspek" data-field="namaProspek" value="${escapeHtml(d.namaProspek||'')}" placeholder="Wajib diisi jika Customer di atas kosong"></div>
+      `}
+      <div class="field"><label>Kontak Prospek</label><input type="text" name="kontakProspek" data-field="kontakProspek" value="${escapeHtml(d.kontakProspek||'')}"></div>
+
+      <label style="display:block;font-size:11.5px;color:var(--ink-500);margin:14px 0 6px;">Kebutuhan Barang</label>
+      <div id="itemRows" data-row-type="tracker">
+        ${d.items.map((it,idx)=>renderTrackerItemRow(it,idx)).join('')}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" data-action="add-item-row" data-row-type="tracker">+ Tambah baris</button>
+
+      <div class="field" style="margin-top:14px;"><label>Status Prospek</label><select name="statusProspek" data-field="statusProspek">
+        ${['Prospek','Follow Up','Negosiasi','Deal','Batal'].map(s=>`<option ${d.statusProspek===s?'selected':''}>${s}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Follow Up Berikutnya</label><input type="date" name="tanggalFollowUpBerikutnya" data-field="tanggalFollowUpBerikutnya" class="mono-input" value="${d.tanggalFollowUpBerikutnya||''}"></div>
+      <div class="field"><label>Catatan</label><input type="text" name="catatan" data-field="catatan" value="${escapeHtml(d.catatan||'')}"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" data-action="save-tracker" data-id="${item?item.id:''}">Simpan</button>
+        <button type="button" class="btn btn-ghost" data-action="nav" data-target="salestracker.pipeline">Batal</button>
+      </div>
+    </form>
+  </div></div></div>`;
+}
+function renderTrackerItemRow(it, idx){
+  return `<div class="item-row" data-item-idx="${idx}" style="grid-template-columns:2.5fr 1fr auto;">
+    <input type="text" placeholder="Nama barang" data-item-field="namaBarang" value="${escapeHtml(it.namaBarang||'')}">
+    <input type="number" placeholder="Qty" data-item-field="qty" class="mono-input" value="${it.qty||1}">
+    <button type="button" class="icon-btn" data-action="remove-item-row" data-idx="${idx}">${icon('trash')}</button>
+  </div>`;
+}
+
+/* ============ PENGATURAN MARGIN (Admin only) ============ */
+function renderMarginSettings(){
+  return `<div class="form-page"><div class="panel"><div class="panel-head"><h3>Pengaturan Margin Default</h3></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink-500);margin-top:0;">Margin ini dipakai otomatis untuk menghitung Harga Jual di setiap Quotation baru: <span class="mono">Harga Jual = (Harga Beli + Ongkos Kirim + Material Handling) ÷ (1 − Margin%)</span>. Hanya Admin/Owner yang bisa mengubah nilai ini.</p>
+      <div class="field"><label>Margin Default (%)</label><input type="number" id="marginSettingInput" class="mono-input" value="${state.settings.defaultMarginPercent}" min="0" max="99"></div>
+      <button type="button" class="btn btn-primary" data-action="save-margin-settings">Simpan</button>
+    </div>
+  </div></div>`;
+}
+
+/* ============ QUOTATION (bespoke: header + line items dengan harga otomatis) ============ */
+const QUOTATION_STATUSES = ['Menunggu Referensi','Menunggu Harga','Siap Dikirim','Terkirim','Diterima','Ditolak'];
+const STATUS_TRANSITIONS = {
+  Admin:       QUOTATION_STATUSES,
+  Procurement: ['Menunggu Referensi','Menunggu Harga'],
+  Penjualan:   ['Menunggu Harga','Siap Dikirim','Terkirim'],
+  Sales:       ['Terkirim','Diterima','Ditolak'],
+};
+function allowedQuotationStatuses(currentStatus){
+  const base = STATUS_TRANSITIONS[state.user.role] || [];
+  return base.includes(currentStatus) ? base : [currentStatus].filter(Boolean);
+}
+function quoItemHargaJual(it){ return calcHargaJual(it.hargaBeli, it.ongkosKirim, it.materialHandling, it.marginPersen!==undefined?it.marginPersen:state.settings.defaultMarginPercent); }
+function quoTotal(d){
+  return (d.items||[]).reduce((a,it)=>a+(Number(it.qty)||0)*quoItemHargaJual(it),0)-(Number(d.diskon)||0);
+}
+function resolveOrCreateCustomer(quo){
+  if(quo.kodeCustomer){
+    const found = (state.data.masterCustomer||[]).find(c=>c.kodeCustomer===quo.kodeCustomer);
+    if(found) return found.kodeCustomer;
+  }
+  const nama = (quo.namaCustomerManual||'Customer '+quo.id).trim();
+  const existing = (state.data.masterCustomer||[]).find(c=>(c.namaCustomer||'').toLowerCase()===nama.toLowerCase());
+  if(existing) return existing.kodeCustomer;
+  const newCode = uid('CUS-AUTO');
+  state.data.masterCustomer = state.data.masterCustomer||[];
+  state.data.masterCustomer.push({kodeCustomer:newCode, namaCustomer:nama, kontakPerson:'', telepon:'', alamat:'', terminPembayaranHari:0, keterangan:'Otomatis dibuat dari '+quo.id});
+  saveEntity('masterCustomer');
+  return newCode;
+}
+function resolveOrCreateBarang(item){
+  const nama = (item.namaBarang||'').trim();
+  const existing = (state.data.masterBarang||[]).find(b=>(b.namaBarang||'').toLowerCase()===nama.toLowerCase());
+  if(existing) return existing.kodeBarang;
+  const newCode = uid('BRG-AUTO');
+  state.data.masterBarang = state.data.masterBarang||[];
+  state.data.masterBarang.push({kodeBarang:newCode, namaBarang:nama, kategori:'', satuan:'', hargaBeliTerakhir:Number(item.hargaBeli)||0, hargaJualStandar:quoItemHargaJual(item), stokMinimum:0, keterangan:'Otomatis dibuat dari Quotation'});
+  saveEntity('masterBarang');
+  return newCode;
+}
+function generateInvoiceFromQuotation(quo){
+  const kodeCustomer = resolveOrCreateCustomer(quo);
+  const tracker = quo.salesTrackerId ? (state.data.salesTracker||[]).find(t=>t.id===quo.salesTrackerId) : null;
+  const nikSales = tracker ? tracker.nikSales : '';
+  state.data.penjualan = state.data.penjualan||[];
+  const newIds = [];
+  quo.items.forEach(item=>{
+    const kodeBarang = resolveOrCreateBarang(item);
+    const row = {
+      id: uid('PJ'),
+      tanggal: todayStr(),
+      kodeCustomer,
+      kodeBarang,
+      qty: Number(item.qty)||0,
+      hargaJual: quoItemHargaJual(item),
+      nikSales,
+      status: 'Belum Lunas',
+      catatan: 'Otomatis dari Quotation '+quo.id,
+      quotationId: quo.id,
+    };
+    state.data.penjualan.push(row);
+    newIds.push(row.id);
+  });
+  saveEntity('penjualan');
+  const idx = state.data.quotation.findIndex(q=>q.id===quo.id);
+  if(idx>-1){
+    state.data.quotation[idx].invoiceGenerated = true;
+    state.data.quotation[idx].penjualanIds = newIds;
+    saveEntity('quotation');
+  }
+  return newIds.length;
+}
+function generatePurchaseDraftFromQuotation(quo){
+  state.data.pembelian = state.data.pembelian||[];
+  const newIds = [];
+  quo.items.forEach(item=>{
+    const kodeBarang = resolveOrCreateBarang(item);
+    const row = {
+      id: uid('PB'),
+      tanggal: todayStr(),
+      kodeSupplier: '', // Procurement memilih/mengonfirmasi supplier aktual saat memproses
+      kodeBarang,
+      qty: Number(item.qty)||0,
+      hargaSatuan: Number(item.hargaBeli)||0, // harga referensi saat quotation — dikonfirmasi/disesuaikan Procurement
+      status: 'Belum Lunas',
+      catatan: 'Draft otomatis dari Quotation '+quo.id+' (referensi lokasi: '+(item.lokasi||'-')+') — lengkapi Supplier & konfirmasi harga',
+      quotationId: quo.id,
+    };
+    state.data.pembelian.push(row);
+    newIds.push(row.id);
+  });
+  saveEntity('pembelian');
+  const idx = state.data.quotation.findIndex(q=>q.id===quo.id);
+  if(idx>-1){
+    state.data.quotation[idx].pembelianGenerated = true;
+    state.data.quotation[idx].pembelianIds = newIds;
+    saveEntity('quotation');
+  }
+  return newIds.length;
+}
+function mitraTeamNiks(kodeMitra){
+  if(!kodeMitra) return [];
+  return (state.data.masterKaryawan||[]).filter(k=>k.kodeMitra===kodeMitra).map(k=>k.nik);
+}
+function currentMitraRecord(){
+  if(!state.user || !state.user.kodeMitra) return null;
+  return (state.data.masterMitra||[]).find(m=>m.kodeMitra===state.user.kodeMitra) || null;
+}
+function quotationOwnerNik(q){
+  const tracker = q.salesTrackerId ? (state.data.salesTracker||[]).find(t=>t.id===q.salesTrackerId) : null;
+  return tracker ? tracker.nikSales : '';
+}
+function quotationBelongsToMitra(q, kodeMitra){
+  const nik = quotationOwnerNik(q);
+  if(!nik) return false;
+  return mitraTeamNiks(kodeMitra).includes(nik);
+}
+function quoBiayaTotal(q){
+  return (q.items||[]).reduce((a,it)=>a+(Number(it.qty)||0)*((Number(it.hargaBeli)||0)+(Number(it.ongkosKirim)||0)+(Number(it.materialHandling)||0)),0);
+}
+function quoMarginBersih(q){
+  return quoTotal(q) - quoBiayaTotal(q);
+}
+function quotationVisibleToUser(q){
+  if(state.user.role==='Sales'){
+    if(!q.salesTrackerId) return false;
+    const tracker = (state.data.salesTracker||[]).find(t=>t.id===q.salesTrackerId);
+    return !!(tracker && state.user.nik && tracker.nikSales===state.user.nik);
+  }
+  if(state.user.role==='Mitra'){
+    return quotationBelongsToMitra(q, state.user.kodeMitra);
+  }
+  return true;
+}
+function renderQuotationDaftar(){
+  const list = (state.data.quotation||[]).filter(quotationVisibleToUser).slice().sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
+  const title = state.user.role==='Sales' ? 'Quotation Saya' : (state.user.role==='Mitra' ? 'Quotation Tim Anda' : 'Daftar Quotation');
+  const canEditQuo = !['Mitra'].includes(state.user.role);
+  return `<div class="panel"><div class="panel-head"><h3>${title}</h3></div>
+    ${list.length===0?`<div class="empty-state"><div class="big">Belum ada quotation</div>${state.user.role==='Sales'?'<div class=\"small\">Buat dari Sales Tracker dengan tombol \"Jadikan Quotation\".</div>':''}</div>`:`
+    <table class="ledger"><thead><tr><th>No</th><th>Tanggal</th><th>Customer</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+    <tbody>${list.map(q=>{
+      const total = quoTotal(q);
+      const custName = q.kodeCustomer ? lookupNameOnly({ref:'masterCustomer',refLabel:'namaCustomer'}, q.kodeCustomer) : (q.namaCustomerManual||'-');
+      const cls = q.status==='Diterima'?'ok':(q.status==='Ditolak'?'bad':'mid');
+      return `<tr><td class="mono">${q.id}</td><td class="mono">${fmtDate(q.tanggal)}</td><td>${escapeHtml(custName)}</td><td class="num">${rupiah(total)}</td><td><span class="pill ${cls}">${q.status}</span></td>
+      <td><div class="row-actions">
+        <button class="icon-btn print" data-action="print-doc" data-doctype="quotation" data-id="${q.id}" title="Cetak">${icon('print')}</button>
+        ${canEditQuo?`<button class="icon-btn" data-action="edit" data-entity="quotation" data-id="${q.id}">${icon('edit')}</button>`:''}
+        ${!isStaff()?`<button class="icon-btn" data-action="delete" data-entity="quotation" data-id="${q.id}">${icon('trash')}</button>`:''}
+      </div></td></tr>`;
+    }).join('')}</tbody></table>`}
+  </div>`;
+}
+function renderQuotationForm(item){
+  const d = item || {tanggal:todayStr(), status:'Menunggu Referensi', items:[{namaBarang:'',qty:1,stok:'',lokasi:'',hargaBeli:0,ongkosKirim:0,materialHandling:0,marginPersen:state.settings.defaultMarginPercent}]};
+  const custData = state.data.masterCustomer||[];
+  const diskonAccess = qAccess('diskon');
+  const showTotal = qAccess('total')!=='hidden' || qAccess('hargaJual')!=='hidden';
+  const allowedStatuses = allowedQuotationStatuses(d.status);
+  return `<div class="form-page" style="max-width:640px;"><div class="panel"><div class="panel-head"><h3>${item?'Ubah':'Buat'} Quotation</h3></div>
+  <div class="modal-body">
+    <form id="quoForm">
+      <div class="field-row">
+        <div class="field"><label>Tanggal</label><input type="date" name="tanggal" data-field="tanggal" class="mono-input" value="${d.tanggal}"></div>
+        <div class="field"><label>Berlaku hingga</label><input type="date" name="validUntil" data-field="validUntil" class="mono-input" value="${d.validUntil||''}"></div>
+      </div>
+      <div class="field"><label>Customer</label><select name="kodeCustomer" data-field="kodeCustomer">
+        <option value="">- pilih dari master / isi manual di bawah -</option>
+        ${custData.map(c=>`<option value="${c.kodeCustomer}" ${d.kodeCustomer===c.kodeCustomer?'selected':''}>${c.kodeCustomer} - ${c.namaCustomer}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Nama Customer (jika manual)</label><input type="text" name="namaCustomerManual" data-field="namaCustomerManual" value="${escapeHtml(d.namaCustomerManual||'')}"></div>
+
+      <label style="display:block;font-size:11.5px;color:var(--ink-500);margin:14px 0 6px;">Item Barang</label>
+      <div id="itemRows" data-row-type="quotation">
+        ${d.items.map((it,idx)=>renderQuoItemRow(it,idx)).join('')}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" data-action="add-item-row" data-row-type="quotation">+ Tambah baris</button>
+
+      ${diskonAccess==='hidden' ? `<input type="hidden" name="diskon" data-field="diskon" value="${d.diskon||0}">` : `<div class="field" style="margin-top:14px;"><label>Diskon (Rp)</label><input type="number" name="diskon" data-field="diskon" class="mono-input" value="${d.diskon||0}" ${diskonAccess==='view'?'disabled':''}></div>`}
+      ${showTotal ? `<div class="calc-total">Total: <b id="quoTotalVal">${rupiah(quoTotal(d))}</b></div>` : ''}
+      <div class="field"><label>Status ${d.status==='Diterima'||d.status==='Ditolak'?'(final)':''}</label><select name="status" data-field="status" ${allowedStatuses.length<=1?'disabled':''}>
+        ${allowedStatuses.map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></div>
+      <div style="font-size:11px;color:var(--ink-500);margin:-8px 0 12px;">Alur: Menunggu Referensi → Menunggu Harga (Procurement) → Siap Dikirim → Terkirim (Penjualan) → Diterima/Ditolak (Sales/Admin)</div>
+      <div class="field"><label>Catatan</label><input type="text" name="catatan" data-field="catatan" value="${escapeHtml(d.catatan||'')}"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" data-action="save-quotation" data-id="${item?item.id:''}">Simpan Quotation</button>
+        <button type="button" class="btn btn-ghost" data-action="nav" data-target="quotation.daftar">Batal</button>
+      </div>
+    </form>
+  </div></div></div>`;
+}
+const QUOTATION_FIELD_ACCESS = {
+  namaBarang:       {Admin:'edit', Procurement:'view',   Penjualan:'edit',   Sales:'edit', Mitra:'view'},
+  qty:              {Admin:'edit', Procurement:'view',   Penjualan:'edit',   Sales:'edit', Mitra:'view'},
+  stok:             {Admin:'edit', Procurement:'edit',   Penjualan:'view',   Sales:'view', Mitra:'hidden'},
+  lokasi:           {Admin:'edit', Procurement:'edit',   Penjualan:'view',   Sales:'hidden', Mitra:'hidden'},
+  hargaBeli:        {Admin:'edit', Procurement:'edit',   Penjualan:'hidden', Sales:'hidden', Mitra:'hidden'},
+  ongkosKirim:      {Admin:'edit', Procurement:'edit',   Penjualan:'hidden', Sales:'hidden', Mitra:'hidden'},
+  materialHandling: {Admin:'edit', Procurement:'edit',   Penjualan:'hidden', Sales:'hidden', Mitra:'hidden'},
+  marginPersen:     {Admin:'edit', Procurement:'hidden', Penjualan:'hidden', Sales:'hidden', Mitra:'hidden'},
+  hargaJual:        {Admin:'view', Procurement:'hidden', Penjualan:'view',   Sales:'view', Mitra:'view'},
+  total:            {Admin:'view', Procurement:'hidden', Penjualan:'view',   Sales:'view', Mitra:'view'},
+  diskon:           {Admin:'edit', Procurement:'hidden', Penjualan:'edit',   Sales:'view', Mitra:'view'},
+};
+function qAccess(field){
+  const role = state.user.role;
+  const m = QUOTATION_FIELD_ACCESS[field];
+  return m ? (m[role]||'hidden') : 'hidden';
+}
+function qInput(field, value, opts){
+  opts = opts || {};
+  const access = qAccess(field);
+  const escVal = opts.number ? (value||0) : escapeHtml(value||'');
+  if(access==='hidden'){
+    return `<input type="hidden" data-item-field="${field}" value="${escVal}">`;
+  }
+  const disabled = access==='view' ? 'disabled' : '';
+  const cls = opts.number ? 'mono-input' : '';
+  return `<div class="field"><label>${opts.label}</label><input type="${opts.number?'number':'text'}" data-item-field="${field}" class="${cls}" value="${escVal}" ${disabled}></div>`;
+}
+function renderQuoItemRow(it, idx){
+  const hargaJual = quoItemHargaJual(it);
+  const total = (Number(it.qty)||0)*hargaJual;
+  const showHargaJual = qAccess('hargaJual')!=='hidden';
+  return `<div class="item-row" data-item-idx="${idx}" style="display:block;border:1px solid var(--kraft-300);border-radius:4px;padding:10px 12px;margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <b style="font-size:11.5px;color:var(--ink-500);">ITEM #${idx+1}</b>
+      <button type="button" class="icon-btn" data-action="remove-item-row" data-idx="${idx}">${icon('trash')}</button>
+    </div>
+    <div class="field-row">
+      ${qInput('namaBarang', it.namaBarang, {label:'Nama Barang'})}
+      ${qInput('qty', it.qty||1, {label:'Qty', number:true})}
+    </div>
+    <div class="field-row">
+      ${qInput('stok', it.stok, {label:'Stok'})}
+      ${qInput('lokasi', it.lokasi, {label:'Lokasi'})}
+    </div>
+    <div class="field-row">
+      ${qInput('hargaBeli', it.hargaBeli||0, {label:'Harga Beli (Rp)', number:true})}
+      ${qInput('ongkosKirim', it.ongkosKirim||0, {label:'Ongkos Kirim (Rp)', number:true})}
+    </div>
+    <div class="field-row">
+      ${qInput('materialHandling', it.materialHandling||0, {label:'Material Handling (Rp)', number:true})}
+      ${qInput('marginPersen', it.marginPersen!==undefined?it.marginPersen:state.settings.defaultMarginPercent, {label:'Margin (%)', number:true})}
+    </div>
+    ${showHargaJual ? `<div class="calc-total" style="margin:4px 0 0;">Harga Jual: <b data-item-computed="hargaJual">${rupiah(hargaJual)}</b> &nbsp;·&nbsp; Total: <b data-item-computed="total">${rupiah(total)}</b></div>` : ''}
+  </div>`;
+}
+
+/* ============ EDIT MODAL (generic) ============ */
+function renderModal(){
+  if(state.modal.type==='settings') return renderSettingsModal();
+  return renderEditModal();
+}
+function renderSettingsModal(){
+  return `<div class="overlay" data-action="close-modal"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><h3>Hubungkan Google Sheets</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink-500);margin-top:0;">Fitur sinkronisasi Google Sheets untuk struktur data baru ini sedang dalam pengembangan lanjutan. Untuk saat ini data tersimpan otomatis di penyimpanan aplikasi.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" data-action="close-modal">Tutup</button></div>
+  </div></div>`;
+}
+function renderEditModal(){
+  const {entity, item} = state.modal;
+  const schema = SCHEMAS[entity];
+  return `<div class="overlay" data-action="close-modal"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><h3>Ubah ${schema.label}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+    <div class="modal-body"><form id="editForm">${renderFormFields(entity, item)}</form></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-action="close-modal">Batal</button>
+      <button class="btn btn-primary" data-action="save-edit" data-entity="${entity}" data-id="${item.id||item[schema.idField]}">Simpan perubahan</button>
+    </div>
+  </div></div>`;
+}
+
+/* ============ PDF DOCUMENT PRINTING ============ */
+function letterheadHTML(){
+  return `<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #1E2A30;padding-bottom:12px;margin-bottom:18px;">
+    <img src="${LOGO_B64}" style="height:56px;">
+    <div>
+      <div style="font-size:16px;font-weight:bold;">${COMPANY.nama}</div>
+      <div style="font-size:10px;line-height:1.5;max-width:420px;">${COMPANY.alamat}</div>
+      <div style="font-size:10px;">Telp/WA: ${COMPANY.telp} | Email: ${COMPANY.email} | NPWP: ${COMPANY.npwp}</div>
+    </div>
+  </div>`;
+}
+function docFooterHTML(leftLabel, rightLabel){
+  return `<div style="display:flex;justify-content:space-between;margin-top:60px;font-size:11px;">
+    <div style="text-align:center;width:200px;"><div>${leftLabel}</div><div style="height:60px;"></div><div style="border-top:1px solid #333;padding-top:4px;">(..........................)</div></div>
+    <div style="text-align:center;width:200px;"><div>${rightLabel}</div><div style="height:60px;"></div><div style="border-top:1px solid #333;padding-top:4px;">(..........................)</div></div>
+  </div>`;
+}
+function itemsTableHTML(rows, withPrice){
+  return `<table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;">
+    <thead><tr style="background:#1E2A30;color:#fff;">
+      <th style="padding:6px 8px;text-align:left;">No</th>
+      <th style="padding:6px 8px;text-align:left;">Nama Barang</th>
+      <th style="padding:6px 8px;text-align:right;">Qty</th>
+      ${withPrice?`<th style="padding:6px 8px;text-align:right;">Harga Satuan</th><th style="padding:6px 8px;text-align:right;">Total</th>`:`<th style="padding:6px 8px;text-align:left;">Keterangan</th>`}
+    </tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr style="border-bottom:1px solid #ddd;">
+      <td style="padding:6px 8px;">${i+1}</td>
+      <td style="padding:6px 8px;">${escapeHtml(r.nama)}</td>
+      <td style="padding:6px 8px;text-align:right;">${r.qty}</td>
+      ${withPrice?`<td style="padding:6px 8px;text-align:right;">${rupiah(r.harga)}</td><td style="padding:6px 8px;text-align:right;">${rupiah(r.qty*r.harga)}</td>`:`<td style="padding:6px 8px;">${r.ket||'-'}</td>`}
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+function buildDocumentHTML(type, record){
+  let title='', nomor=record.id, tanggal=fmtDate(record.tanggal||todayStr()), body='';
+  if(type==='po'){
+    const supplier = lookupRow('masterSupplier', record.kodeSupplier);
+    const barang = lookupRow('masterBarang', record.kodeBarang);
+    title = 'PURCHASE ORDER';
+    body = `<div style="margin-bottom:14px;font-size:12px;"><b>Kepada Yth:</b><br>${escapeHtml(supplier?supplier.namaSupplier:'-')}<br>${escapeHtml(supplier?supplier.alamat||'':'')}<br>${escapeHtml(supplier?supplier.telepon||'':'')}</div>
+    ${itemsTableHTML([{nama:barang?barang.namaBarang:record.kodeBarang, qty:record.qty, harga:record.hargaSatuan}], true)}
+    <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah((Number(record.qty)||0)*(Number(record.hargaSatuan)||0))}</div>
+    <div style="font-size:11px;margin-top:14px;">Status pembayaran: ${record.status}<br>Catatan: ${escapeHtml(record.catatan||'-')}</div>
+    ${docFooterHTML('Dipesan oleh','Disetujui oleh')}`;
+  } else if(type==='invoice'){
+    const siblingRows = record.quotationId
+      ? (state.data.penjualan||[]).filter(p=>p.quotationId===record.quotationId)
+      : [record];
+    const customer = lookupRow('masterCustomer', record.kodeCustomer);
+    const isCash = siblingRows.every(r=>r.status==='Lunas');
+    title = isCash ? 'NOTA PENJUALAN' : 'INVOICE';
+    if(record.quotationId){ nomor = record.quotationId.replace('QUO','INV'); }
+    const rows = siblingRows.map(r=>{
+      const barang = lookupRow('masterBarang', r.kodeBarang);
+      return {nama:barang?barang.namaBarang:r.kodeBarang, qty:r.qty, harga:r.hargaJual};
+    });
+    const total = rows.reduce((a,r)=>a+(Number(r.qty)||0)*(Number(r.harga)||0),0);
+    let statusLine;
+    if(isCash){
+      statusLine = `<div style="font-size:12px;margin-top:6px;"><span style="background:#e4ece2;color:#3f6b4a;padding:3px 10px;border-radius:3px;font-weight:bold;">LUNAS</span></div>`;
+    } else {
+      const terminHari = customer && customer.terminPembayaranHari ? Number(customer.terminPembayaranHari) : 30;
+      const jatuhTempo = new Date(new Date(record.tanggal).getTime() + terminHari*24*3600*1000);
+      const statusRingkas = siblingRows.length>1 ? siblingRows.map(r=>r.status).join(', ') : record.status;
+      statusLine = `<div style="font-size:11px;margin-top:6px;">Status pembayaran: ${statusRingkas}<br>Jatuh tempo: ${fmtDate(jatuhTempo.toISOString().slice(0,10))} (termin ${terminHari} hari)</div>`;
+    }
+    body = `<div style="margin-bottom:14px;font-size:12px;"><b>Kepada Yth:</b><br>${escapeHtml(customer?customer.namaCustomer:'-')}<br>${escapeHtml(customer?customer.alamat||'':'')}<br>${escapeHtml(customer?customer.telepon||'':'')}</div>
+    ${itemsTableHTML(rows, true)}
+    <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(total)}</div>
+    ${statusLine}
+    <div style="font-size:11px;margin-top:8px;">Catatan: ${escapeHtml(record.catatan||'-')}</div>
+    ${docFooterHTML('Hormat kami','Diterima oleh')}`;
+  } else if(type==='suratjalan'){
+    const penjualan = lookupRow('penjualan', record.idPenjualan);
+    const customer = penjualan ? lookupRow('masterCustomer', penjualan.kodeCustomer) : null;
+    const barang = penjualan ? lookupRow('masterBarang', penjualan.kodeBarang) : null;
+    title = 'SURAT JALAN';
+    body = `<div style="margin-bottom:14px;font-size:12px;"><b>Dikirim kepada:</b><br>${escapeHtml(customer?customer.namaCustomer:'-')}<br>${escapeHtml(record.tujuanAlamat||(customer?customer.alamat:'')||'')}</div>
+    ${itemsTableHTML([{nama:barang?barang.namaBarang:'-', qty:penjualan?penjualan.qty:'-', ket:record.catatan||'-'}], false)}
+    <div style="font-size:11px;">Ekspedisi: ${escapeHtml(record.ekspedisi||'-')} | No. Resi: ${escapeHtml(record.noResi||'-')}<br>
+    Tanggal Kirim: ${fmtDate(record.tanggalKirim)} | Status: ${record.statusPengiriman}</div>
+    ${docFooterHTML('Dikirim oleh','Diterima oleh')}`;
+  } else if(type==='quotation'){
+    const customer = record.kodeCustomer ? lookupRow('masterCustomer', record.kodeCustomer) : null;
+    const custName = customer ? customer.namaCustomer : (record.namaCustomerManual||'-');
+    title = 'QUOTATION / PENAWARAN HARGA';
+    const rows = (record.items||[]).map(it=>({nama:it.namaBarang, qty:it.qty, harga:quoItemHargaJual(it)}));
+    body = `<div style="margin-bottom:14px;font-size:12px;"><b>Kepada Yth:</b><br>${escapeHtml(custName)}${customer?`<br>${escapeHtml(customer.alamat||'')}<br>${escapeHtml(customer.telepon||'')}`:''}</div>
+    ${itemsTableHTML(rows, true)}
+    <div style="text-align:right;font-size:12px;">Diskon: ${rupiah(record.diskon||0)}</div>
+    <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(quoTotal(record))}</div>
+    <div style="font-size:11px;margin-top:14px;">Berlaku hingga: ${fmtDate(record.validUntil)}<br>Catatan: ${escapeHtml(record.catatan||'-')}</div>
+    ${docFooterHTML('Hormat kami','Disetujui oleh')}`;
+  }
+  return `<div style="padding:24px;width:210mm;min-height:280mm;">
+    ${letterheadHTML()}
+    <div style="text-align:center;font-size:15px;font-weight:bold;text-decoration:underline;margin-bottom:4px;">${title}</div>
+    <div style="text-align:center;font-size:11px;margin-bottom:18px;">No: ${nomor} | Tanggal: ${tanggal}</div>
+    ${body}
+  </div>`;
+}
+function printDocument(doctype, id){
+  let record;
+  if(doctype==='po') record = lookupRow('pembelian', id);
+  else if(doctype==='invoice') record = lookupRow('penjualan', id);
+  else if(doctype==='suratjalan') record = lookupRow('pengiriman', id);
+  else if(doctype==='quotation') record = lookupRow('quotation', id);
+  if(!record){ showToast('Data tidak ditemukan'); return; }
+  const html = buildDocumentHTML(doctype, record);
+  const fileId = (doctype==='invoice' && record.quotationId) ? record.quotationId.replace('QUO','INV') : id;
+  const container = document.getElementById('printArea');
+  container.innerHTML = html;
+  const opt = { margin:5, filename:`${doctype}-${fileId}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+  showToast('Menyiapkan PDF…');
+  html2pdf().set(opt).from(container).save().then(()=>{ container.innerHTML=''; }).catch(()=>{ showToast('Gagal membuat PDF'); container.innerHTML=''; });
+}
+
+/* ============ EVENT DELEGATION ============ */
+function getFormValues(formEl, schemaFields){
+  const payload = {};
+  schemaFields.forEach(f=>{
+    const el = formEl.querySelector(`[data-field="${f.key}"]`);
+    if(!el) return;
+    payload[f.key] = f.type==='number' ? Number(el.value)||0 : el.value;
+  });
+  return payload;
+}
+
+document.addEventListener('submit', function(e){
+  if(e.target && e.target.id==='loginForm'){
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    tryLogin(fd.get('username'), fd.get('password'));
+  }
+});
+
+document.addEventListener('click', function(e){
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  const action = el.getAttribute('data-action');
+
+  if(action==='logout'){ doLogout(); return; }
+  if(action==='toggle'){
+    const id = el.getAttribute('data-target');
+    if(state.expanded.has(id)) state.expanded.delete(id); else state.expanded.add(id);
+    render(); return;
+  }
+  if(action==='nav'){
+    const target = el.getAttribute('data-target');
+    const menuId = target.split('.')[0];
+    state.expanded.add(menuId);
+    state._editingQuotation = null;
+    state._editingSalesTracker = null;
+    state.view = target; state.search=''; state.reportMonth='semua'; state.sheetOpen=false;
+    render(); return;
+  }
+  if(action==='open-sheet'){ state.sheetOpen=true; render(); return; }
+  if(action==='close-sheet'){ state.sheetOpen=false; render(); return; }
+  if(action==='open-settings'){ state.modal={type:'settings'}; render(); return; }
+  if(action==='close-modal'){ state.modal=null; render(); return; }
+
+  if(action==='print-doc'){
+    printDocument(el.getAttribute('data-doctype'), el.getAttribute('data-id'));
+    return;
+  }
+
+  if(action==='edit'){
+    const entity = el.getAttribute('data-entity'); const id = el.getAttribute('data-id');
+    if(entity==='quotation'){
+      const item = (state.data.quotation||[]).find(q=>q.id===id);
+      state.view='quotation.tambah'; state._editingQuotation = item; state._editingSalesTracker=null; render();
+      return;
+    }
+    if(entity==='salesTracker'){
+      const item = (state.data.salesTracker||[]).find(t=>t.id===id);
+      state.view='salestracker.tambah'; state._editingSalesTracker = item; state._editingQuotation=null; render();
+      return;
+    }
+    const item = lookupRow(entity, id);
+    state.modal = {type:'edit', entity, item};
+    render(); return;
+  }
+  if(action==='delete'){
+    const entity = el.getAttribute('data-entity'); const id = el.getAttribute('data-id');
+    if(isStaff()){ showToast('Staff tidak dapat menghapus data'); return; }
+    if(confirm('Hapus data ini?')){
+      const schema = SCHEMAS[entity]; const idF = schema?schema.idField||'id':'id';
+      state.data[entity] = (state.data[entity]||[]).filter(it=>String(it[idF]!==undefined?it[idF]:it.id)!==String(id));
+      saveEntity(entity); render(); showToast('Data dihapus');
+    }
+    return;
+  }
+  if(action==='search'){ return; } // handled in input listener
+
+  if(action==='save-entry'){
+    const entity = el.getAttribute('data-entity');
+    const schema = SCHEMAS[entity];
+    const form = document.getElementById('entryForm');
+    const missing = schema.fields.filter(f=>f.required).some(f=>{
+      const fe = form.querySelector(`[data-field="${f.key}"]`); return fe && !fe.value;
+    });
+    if(missing){ showToast('Lengkapi field yang wajib diisi'); return; }
+    const payload = getFormValues(form, schema.fields);
+    if(schema.idField){
+      const exists = (state.data[entity]||[]).some(it=>String(it[schema.idField])===String(payload[schema.idField]));
+      if(exists){ showToast('Kode sudah dipakai, gunakan kode lain'); return; }
+    } else {
+      payload.id = uid(schema.idPrefix);
+    }
+    state.data[entity] = state.data[entity]||[];
+    state.data[entity].push(payload);
+    saveEntity(entity);
+    state.view = defaultDaftarView(entity);
+    render();
+    showToast(`${schema.label} berhasil ditambahkan`);
+    return;
+  }
+  if(action==='save-generic-inline'){
+    const entity = el.getAttribute('data-entity');
+    const schema = SCHEMAS[entity];
+    const container = el.closest('.panel').querySelector('.modal-body');
+    const missing = schema.fields.filter(f=>f.required).some(f=>{
+      const fe = container.querySelector(`[data-field="${f.key}"]`); return fe && !fe.value;
+    });
+    if(missing){ showToast('Lengkapi field yang wajib diisi'); return; }
+    const payload = {};
+    schema.fields.forEach(f=>{
+      const fe = container.querySelector(`[data-field="${f.key}"]`);
+      if(fe) payload[f.key] = f.type==='number'?Number(fe.value)||0:fe.value;
+    });
+    if(!schema.idField) payload.id = uid(schema.idPrefix);
+    else {
+      const exists = (state.data[entity]||[]).some(it=>String(it[schema.idField])===String(payload[schema.idField]));
+      if(exists){ showToast('Kode sudah dipakai, gunakan kode lain'); return; }
+    }
+    state.data[entity] = state.data[entity]||[];
+    state.data[entity].push(payload);
+    saveEntity(entity); render();
+    showToast(`${schema.label} berhasil ditambahkan`);
+    return;
+  }
+  if(action==='save-edit'){
+    const entity = el.getAttribute('data-entity'); const id = el.getAttribute('data-id');
+    const schema = SCHEMAS[entity];
+    const form = document.getElementById('editForm');
+    const payload = getFormValues(form, schema.fields);
+    const idF = schema.idField || 'id';
+    const idx = (state.data[entity]||[]).findIndex(it=>String(it[idF]!==undefined?it[idF]:it.id)===String(id));
+    if(idx>-1){
+      const original = state.data[entity][idx];
+      state.data[entity][idx] = {...original, ...payload};
+      if(!schema.idField) state.data[entity][idx].id = original.id;
+      saveEntity(entity);
+    }
+    state.modal=null; render(); showToast('Perubahan disimpan');
+    return;
+  }
+
+  if(action==='add-item-row'){
+    const rowType = el.getAttribute('data-row-type');
+    const wrap = document.getElementById('itemRows');
+    const idx = wrap.children.length;
+    if(rowType==='tracker'){
+      wrap.insertAdjacentHTML('beforeend', renderTrackerItemRow({namaBarang:'',qty:1}, idx));
+    } else {
+      wrap.insertAdjacentHTML('beforeend', renderQuoItemRow({namaBarang:'',qty:1,stok:'',lokasi:'',hargaBeli:0,ongkosKirim:0,materialHandling:0,marginPersen:state.settings.defaultMarginPercent}, idx));
+    }
+    return;
+  }
+  if(action==='remove-item-row'){
+    const row = el.closest('[data-item-idx]');
+    if(row) row.remove();
+    return;
+  }
+  if(action==='save-quotation'){
+    const form = document.getElementById('quoForm');
+    const items = Array.from(document.querySelectorAll('#itemRows [data-item-idx]')).map(row=>{
+      const get = (f, isNum)=>{
+        const fe = row.querySelector(`[data-item-field="${f}"]`);
+        if(!fe) return isNum?0:'';
+        return isNum ? (Number(fe.value)||0) : fe.value;
+      };
+      return {
+        namaBarang: get('namaBarang', false),
+        qty: get('qty', true),
+        stok: get('stok', false),
+        lokasi: get('lokasi', false),
+        hargaBeli: get('hargaBeli', true),
+        ongkosKirim: get('ongkosKirim', true),
+        materialHandling: get('materialHandling', true),
+        marginPersen: get('marginPersen', true),
+      };
+    }).filter(it=>it.namaBarang);
+    if(items.length===0){ showToast('Tambahkan minimal satu item barang'); return; }
+    const getField = (f, isNum)=>{
+      const fe = form.querySelector(`[data-field="${f}"]`);
+      if(!fe) return isNum?0:'';
+      return isNum ? (Number(fe.value)||0) : fe.value;
+    };
+    const existingId = el.getAttribute('data-id');
+    state.data.quotation = state.data.quotation||[];
+    const existingIdx = existingId ? state.data.quotation.findIndex(q=>q.id===existingId) : -1;
+    const oldStatus = existingIdx>-1 ? state.data.quotation[existingIdx].status : null;
+    const alreadyInvoiced = existingIdx>-1 ? !!state.data.quotation[existingIdx].invoiceGenerated : false;
+    const alreadyPurchased = existingIdx>-1 ? !!state.data.quotation[existingIdx].pembelianGenerated : false;
+    const newStatus = getField('status');
+
+    // Keamanan: jangan izinkan lompat ke status di luar wewenang role ini
+    if(!allowedQuotationStatuses(oldStatus||newStatus).includes(newStatus)){
+      showToast('Anda tidak berwenang mengubah status ke '+newStatus);
+      return;
+    }
+    // Validasi: tidak boleh "Diterima" kalau masih ada item belum ada referensi harga
+    if(newStatus==='Diterima'){
+      const belumLengkap = items.some(it=>(Number(it.hargaBeli)||0)<=0);
+      if(belumLengkap){
+        showToast('Tidak bisa set "Diterima" — masih ada item yang belum ada Harga Beli dari Procurement');
+        return;
+      }
+    }
+
+    const payload = {
+      tanggal: getField('tanggal'),
+      validUntil: getField('validUntil'),
+      kodeCustomer: getField('kodeCustomer'),
+      namaCustomerManual: getField('namaCustomerManual'),
+      diskon: getField('diskon', true),
+      status: newStatus,
+      catatan: getField('catatan'),
+      items,
+    };
+    let savedRecord;
+    if(existingIdx>-1){
+      state.data.quotation[existingIdx] = {...state.data.quotation[existingIdx], ...payload};
+      savedRecord = state.data.quotation[existingIdx];
+    } else {
+      payload.id = uid('QUO');
+      state.data.quotation.push(payload);
+      savedRecord = payload;
+    }
+    saveEntity('quotation');
+    state._editingQuotation = null;
+    state.view='quotation.daftar';
+
+    if(newStatus==='Diterima' && oldStatus!=='Diterima'){
+      let msgParts = [];
+      if(!alreadyInvoiced){
+        const count = generateInvoiceFromQuotation(savedRecord);
+        msgParts.push(`${count} transaksi Penjualan`);
+      }
+      if(!alreadyPurchased){
+        const countBeli = generatePurchaseDraftFromQuotation(savedRecord);
+        msgParts.push(`${countBeli} draft Pembelian`);
+      }
+      render();
+      showToast(msgParts.length ? `Quotation diterima — ${msgParts.join(' & ')} dibuat otomatis` : 'Quotation tersimpan');
+    } else {
+      render();
+      showToast('Quotation tersimpan');
+    }
+    return;
+  }
+  if(action==='save-tracker'){
+    const form = document.getElementById('trackerForm');
+    const items = Array.from(document.querySelectorAll('#itemRows [data-item-idx]')).map(row=>({
+      namaBarang: row.querySelector('[data-item-field="namaBarang"]').value,
+      qty: Number(row.querySelector('[data-item-field="qty"]').value)||0,
+    })).filter(it=>it.namaBarang);
+    if(items.length===0){ showToast('Tambahkan minimal satu kebutuhan barang'); return; }
+    const getField = (f)=>{ const fe=form.querySelector(`[data-field="${f}"]`); return fe?fe.value:''; };
+    if(state.user.role==='Sales'){
+      if(!getField('kodeCustomer')){ showToast('Pilih Customer dari Master Data — hubungi Tim FA jika belum terdaftar'); return; }
+    } else if(!getField('kodeCustomer') && !getField('namaProspek')){
+      showToast('Isi Customer atau Nama Prospek'); return;
+    }
+    const payload = {
+      tanggalInput: getField('tanggalInput'),
+      nikSales: getField('nikSales'),
+      kodeCustomer: getField('kodeCustomer'),
+      namaProspek: getField('namaProspek'),
+      kontakProspek: getField('kontakProspek'),
+      statusProspek: getField('statusProspek'),
+      tanggalFollowUpBerikutnya: getField('tanggalFollowUpBerikutnya'),
+      catatan: getField('catatan'),
+      items,
+    };
+    const existingId = el.getAttribute('data-id');
+    state.data.salesTracker = state.data.salesTracker||[];
+    if(existingId){
+      const idx = state.data.salesTracker.findIndex(t=>t.id===existingId);
+      if(idx>-1) state.data.salesTracker[idx] = {...state.data.salesTracker[idx], ...payload};
+    } else {
+      payload.id = uid('ST');
+      state.data.salesTracker.push(payload);
+    }
+    saveEntity('salesTracker');
+    state._editingSalesTracker = null;
+    state.view='salestracker.pipeline'; render();
+    showToast('Data prospek tersimpan');
+    return;
+  }
+  if(action==='save-margin-settings'){
+    const val = Number(document.getElementById('marginSettingInput').value);
+    if(!val || val<0 || val>=100){ showToast('Margin harus di antara 0-99%'); return; }
+    state.settings.defaultMarginPercent = val;
+    saveSettings();
+    showToast('Margin default disimpan');
+    return;
+  }
+  if(action==='make-quotation'){
+    const trackerId = el.getAttribute('data-id');
+    const tracker = (state.data.salesTracker||[]).find(t=>t.id===trackerId);
+    if(!tracker){ showToast('Data prospek tidak ditemukan'); return; }
+    const newQuo = {
+      id: uid('QUO'),
+      tanggal: todayStr(),
+      validUntil: '',
+      kodeCustomer: tracker.kodeCustomer||'',
+      namaCustomerManual: tracker.namaProspek||'',
+      diskon: 0,
+      status: 'Menunggu Referensi',
+      catatan: '',
+      salesTrackerId: tracker.id,
+      items: (tracker.items||[]).map(it=>({
+        namaBarang: it.namaBarang, qty: it.qty, stok:'', lokasi:'',
+        hargaBeli:0, ongkosKirim:0, materialHandling:0, marginPersen: state.settings.defaultMarginPercent,
+      })),
+    };
+    state.data.quotation = state.data.quotation||[];
+    state.data.quotation.push(newQuo);
+    saveEntity('quotation');
+    tracker.quotationId = newQuo.id;
+    saveEntity('salesTracker');
+    state.view='quotation.tambah'; state._editingQuotation = newQuo; state._editingSalesTracker=null;
+    render();
+    showToast('Quotation dibuat dari data prospek — silakan lengkapi referensi harga');
+    return;
+  }
+});
+
+
+document.addEventListener('input', function(e){
+  if(e.target.matches('[data-action="search"]')){
+    state.search = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = document.querySelector('[data-action="search"]');
+    if(el){ el.focus(); el.setSelectionRange(pos,pos); }
+    return;
+  }
+  // live total for generic Tambah forms
+  const form = e.target.closest('#entryForm');
+  if(form){
+    const entity = document.querySelector('[data-action="save-entry"]')?.getAttribute('data-entity');
+    if(entity && SCHEMAS[entity].computed){
+      const schema = SCHEMAS[entity];
+      const payload = {};
+      schema.fields.forEach(f=>{ const fe=form.querySelector(`[data-field="${f.key}"]`); if(fe) payload[f.key]=f.type==='number'?Number(fe.value)||0:fe.value; });
+      schema.computed.forEach(c=>{
+        const target = form.querySelector(`[data-live-computed="${c.key}"] b`);
+        if(target) target.textContent = typeof c.fn(payload)==='number' ? rupiah(c.fn(payload)) : c.fn(payload);
+      });
+    }
+  }
+  // live update Harga Jual/Total per item & grand total pada form Quotation
+  if(e.target.closest('#itemRows') && document.getElementById('quoForm')){
+    const rowVal = (row, f)=>{ const fe=row.querySelector(`[data-item-field="${f}"]`); return fe?Number(fe.value)||0:0; };
+    let grand = 0;
+    document.querySelectorAll('#itemRows [data-item-idx]').forEach(row=>{
+      const margin = rowVal(row,'marginPersen') || state.settings.defaultMarginPercent;
+      const hargaJual = calcHargaJual(rowVal(row,'hargaBeli'), rowVal(row,'ongkosKirim'), rowVal(row,'materialHandling'), margin);
+      const total = rowVal(row,'qty')*hargaJual;
+      grand += total;
+      const hjEl = row.querySelector('[data-item-computed="hargaJual"]');
+      const totEl = row.querySelector('[data-item-computed="total"]');
+      if(hjEl) hjEl.textContent = rupiah(hargaJual);
+      if(totEl) totEl.textContent = rupiah(total);
+    });
+    const totalEl = document.getElementById('quoTotalVal');
+    if(totalEl){
+      const diskonEl = document.querySelector('[data-field="diskon"]');
+      const diskon = diskonEl?Number(diskonEl.value)||0:0;
+      totalEl.textContent = rupiah(grand-diskon);
+    }
+  }
+});
+document.addEventListener('change', function(e){
+  if(e.target.matches('[data-action="report-month"]')){ state.reportMonth = e.target.value; render(); }
+  if(e.target.matches('[data-action="select-laporan-mitra"]')){ state.reportMitra = e.target.value; render(); }
+});
+
+/* Special: intercept edit views that need a draft item outside normal dispatch */
+const _origRenderView = renderView;
+renderView = function(){
+  if(state.view==='quotation.tambah' && state._editingQuotation){
+    return renderQuotationForm(state._editingQuotation);
+  }
+  if(state.view==='salestracker.tambah' && state._editingSalesTracker){
+    return renderSalesTrackerForm(state._editingSalesTracker);
+  }
+  return _origRenderView();
+};
+
+/* ============ INIT ============ */
+loadData();
+render();
+
+/* ============ PWA: SERVICE WORKER REGISTRATION ============ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* offline/first run — ignore */ });
+  });
+}
+</script>
+</body>
+</html>
