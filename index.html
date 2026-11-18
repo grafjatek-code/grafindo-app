@@ -127,6 +127,7 @@
   .field{margin-bottom:13px;}
   .field label{display:block;font-size:11.5px;color:var(--ink-500);margin-bottom:5px;}
   .field input, .field select{width:100%;border:1px solid var(--kraft-300);background:#fff;padding:8px 10px;font-size:13px;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;color:var(--ink-900);}
+  .field textarea{width:100%;border:1px solid var(--kraft-300);background:#fff;padding:8px 10px;font-size:13px;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;color:var(--ink-900);resize:vertical;}
   .field input.mono-input{font-family:'IBM Plex Mono',monospace;}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .calc-total{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-500);margin:-4px 0 14px;}
@@ -480,6 +481,7 @@ const MENU = [
     {id:'daftar', label:'Daftar Pengiriman'}, {id:'tambah', label:'Tambah Pengiriman'},
   ]},
   {id:'laporankomisi', label:'Laporan Komisi', icon:'finance', roles:['Admin','Mitra']},
+  {id:'pengaturandokumen', label:'Pengaturan Dokumen', icon:'quote', roles:['Admin']},
   {id:'pengguna', label:'Kelola Pengguna', icon:'employee', roles:['Admin'], submenu:[
     {id:'daftar', label:'Daftar Pengguna'}, {id:'tambah', label:'Tambah Pengguna'},
   ]},
@@ -1061,6 +1063,7 @@ function renderView(){
   if(!canAccessView(state.view)) return `<div class="soon-banner"><div class="big">Akses dibatasi</div><div>Menu ini tidak tersedia untuk role ${state.user.role}.</div></div>`;
   if(state.view==='dashboard') return renderDashboard();
   if(state.view==='laporankomisi') return renderLaporanKomisi();
+  if(state.view==='pengaturandokumen') return renderPengaturanDokumen();
   const [menuId, subId] = state.view.split('.');
   if(menuId==='master'){
     if(subId==='masterBarang') return renderGenericPage('masterBarang');
@@ -1550,6 +1553,37 @@ function renderMarginSettings(){
   </div></div>`;
 }
 
+/* ============ PENGATURAN DOKUMEN (Admin only) ============ */
+function renderPengaturanDokumen(){
+  const cfg = getDocConfig();
+  const ta = (id,label,val,rows,help)=>`<div class="field"><label>${label}</label><textarea id="${id}" rows="${rows}">${escapeHtml(Array.isArray(val)?val.join('\n'):val)}</textarea>${help?`<div style="font-size:11px;color:var(--ink-500);margin-top:3px;">${help}</div>`:''}</div>`;
+  return `<div class="form-page"><div class="panel"><div class="panel-head"><h3>Pengaturan Dokumen</h3></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink-500);margin-top:0;">Atur rekening dan baris catatan standar yang tercetak di Quotation, Proforma Invoice, Invoice, Nota Penjualan, dan Surat Jalan. Satu baris = satu poin catatan. Token yang bisa dipakai: <span class="mono">{bank} {norek} {atasnama} {telp} {email}</span>, plus <span class="mono">{termin}</span> (Quotation) dan <span class="mono">{tipebayar}</span> (Proforma/Invoice).</p>
+      <h4 style="margin:14px 0 6px;">Rekening pembayaran</h4>
+      <div class="field"><label>Bank</label><input id="dc-bank" value="${escapeHtml(cfg.bank.bank)}"></div>
+      <div class="field"><label>No. Rekening</label><input id="dc-norek" class="mono-input" value="${escapeHtml(cfg.bank.norek)}"></div>
+      <div class="field"><label>Atas Nama</label><input id="dc-atasnama" value="${escapeHtml(cfg.bank.atasnama)}"></div>
+      <h4 style="margin:14px 0 6px;">Quotation</h4>
+      ${ta('dc-quotationCash','Baris pembayaran bila Cash',cfg.quotationCash,2)}
+      ${ta('dc-quotationTermin','Baris pembayaran bila Termin',cfg.quotationTermin,2)}
+      ${ta('dc-quotation','Baris standar berikutnya',cfg.quotation,5)}
+      <h4 style="margin:14px 0 6px;">Proforma Invoice</h4>
+      ${ta('dc-proforma','Baris standar',cfg.proforma,5)}
+      <h4 style="margin:14px 0 6px;">Invoice</h4>
+      ${ta('dc-invoice','Baris standar',cfg.invoice,4)}
+      <h4 style="margin:14px 0 6px;">Nota Penjualan</h4>
+      ${ta('dc-nota','Baris standar',cfg.nota,4)}
+      <h4 style="margin:14px 0 6px;">Surat Jalan</h4>
+      ${ta('dc-suratjalan','Baris standar',cfg.suratjalan,5)}
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button type="button" class="btn btn-primary" data-action="save-doc-settings">Simpan</button>
+        <button type="button" class="btn btn-ghost" data-action="reset-doc-settings">Kembalikan ke bawaan</button>
+      </div>
+    </div>
+  </div></div>`;
+}
+
 /* ============ QUOTATION (bespoke: header + line items dengan harga otomatis) ============ */
 const QUOTATION_STATUSES = ['Menunggu Referensi','Menunggu Harga','Siap Dikirim','Terkirim','Diterima','Ditolak'];
 const STATUS_TRANSITIONS = {
@@ -1685,6 +1719,7 @@ function quotationVisibleToUser(q){
   return true;
 }
 function renderQuotationDaftar(){
+  const canPrintQuo = ['Admin','Penjualan','Sales'].includes(state.user.role);
   const list = (state.data.quotation||[]).filter(quotationVisibleToUser).slice().sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
   const title = state.user.role==='Sales' ? 'Quotation Saya' : (state.user.role==='Mitra' ? 'Quotation Tim Anda' : 'Daftar Quotation');
   const canEditQuo = !['Mitra'].includes(state.user.role);
@@ -1697,7 +1732,8 @@ function renderQuotationDaftar(){
       const cls = q.status==='Diterima'?'ok':(q.status==='Ditolak'?'bad':'mid');
       return `<tr><td class="mono">${q.id}</td><td class="mono">${fmtDate(q.tanggal)}</td><td>${escapeHtml(custName)}</td><td class="num">${rupiah(total)}</td><td><span class="pill ${cls}">${q.status}</span></td>
       <td><div class="row-actions">
-        <button class="icon-btn print" data-action="print-doc" data-doctype="quotation" data-id="${q.id}" title="Cetak">${icon('print')}</button>
+        ${canPrintQuo?`<button class="icon-btn print" data-action="print-doc" data-doctype="quotation" data-id="${q.id}" title="Cetak Quotation">${icon('print')}</button>`:''}
+        ${canPrintQuo && (q.status==='Terkirim'||q.status==='Diterima')?`<button class="btn btn-ghost btn-sm" data-action="print-doc" data-doctype="proforma" data-id="${q.id}" title="Cetak Proforma Invoice">Proforma</button>`:''}
         ${canEditQuo?`<button class="icon-btn" data-action="edit" data-entity="quotation" data-id="${q.id}">${icon('edit')}</button>`:''}
         ${!isStaff()?`<button class="icon-btn" data-action="delete" data-entity="quotation" data-id="${q.id}">${icon('trash')}</button>`:''}
       </div></td></tr>`;
@@ -1804,6 +1840,7 @@ function renderQuoItemRow(it, idx){
 /* ============ EDIT MODAL (generic) ============ */
 function renderModal(){
   if(state.modal.type==='settings') return renderSettingsModal();
+  if(state.modal.type==='printOpts') return renderPrintOptsModal();
   return renderEditModal();
 }
 function renderSettingsModal(){
@@ -1880,6 +1917,139 @@ function itemsTableHTML(rows, withPrice){
     </tr>`).join('')}</tbody>
   </table>`;
 }
+/* ---- Template remarks per dokumen (bisa diubah Admin di menu "Pengaturan Dokumen") ---- */
+const EST_LINE = 'Estimasi (BJM 1-3 hari kerja, SBY 4-7 hari kerja, JKT 8-12 hari kerja) dari PO Terbit';
+const DOC_DEFAULTS = {
+  bank: {bank:'BNI', norek:'034-1713-707', atasnama:'Anisa'},
+  quotationCash: 'Tunai, 100% lunas sebelum barang dikirim.',
+  quotationTermin: 'Pembayaran termin {termin} hari sejak invoice diterbitkan.',
+  quotation: [
+    'Pembayaran dapat ditransfer via Bank {bank}, No.Rek: {norek}, a/n: {atasnama}.',
+    EST_LINE,
+    'Jika Anda memiliki pertanyaan tentang Quotation ini, silahkan hubungi ke {telp}',
+  ],
+  proforma: [
+    'Proforma invoice ini bukan faktur pajak dan bukan bukti pembayaran',
+    EST_LINE+'.',
+    'Tipe pembayaran {tipebayar} (Rekening Payment : Bank {bank} {norek} a/n {atasnama})',
+  ],
+  invoice: [
+    EST_LINE+'.',
+    'Tipe pembayaran {tipebayar} (Rekening Payment : Bank {bank} {norek} a/n {atasnama})',
+  ],
+  nota: [
+    'Pembayaran: Full Payment, transfer ke Bank {bank} {norek} a/n {atasnama}.',
+    'Nota penjualan ini bukan faktur pajak.',
+    'Barang yang sudah diterima dalam kondisi baik dan jumlah sesuai tidak dapat dikembalikan.',
+  ],
+  suratjalan: [
+    'Berikan lembar salinan Surat Jalan yang sudah bertanda tangan penerima kepada bagian pengantar, atau di email ke {email} atau WA ke {telp}',
+    'Barang yang dikirim sudah diperiksa terlebih dahulu fungsi, kelengkapan maupun keamanan kemasan pengiriman.',
+    'Klaim garansi atas kerusakan, kekurangan atau kesalahan kirim barang diterima selama ada video dokumentasi.',
+  ],
+};
+const MANUAL_COUNT = {quotation:4, proforma:3, invoice:3, nota:3, suratjalan:3};
+const PROFORMA_TIPE = ['Lunas','DP 30%','DP 50%'];
+
+function getDocConfig(){
+  const c = (state.settings && state.settings.docConfig) || {};
+  const out = {};
+  Object.keys(DOC_DEFAULTS).forEach(k=>{
+    const d = DOC_DEFAULTS[k];
+    out[k] = (k==='bank') ? {...d, ...(c.bank||{})} : (c[k]!==undefined ? c[k] : d);
+  });
+  return out;
+}
+function fillTokens(str, ctx){
+  return (str||'').replace(/\{(\w+)\}/g, (m,k)=> ctx[k]!==undefined ? ctx[k] : m);
+}
+function docCtx(extra){
+  const b = getDocConfig().bank;
+  return {bank:b.bank, norek:b.norek, atasnama:b.atasnama, telp:COMPANY.telp, email:COMPANY.email, ...(extra||{})};
+}
+
+/* Cari data sumber dokumen */
+function findDocRecord(doctype, id){
+  if(doctype==='po') return lookupRow('pembelian', id);
+  if(doctype==='invoice') return lookupRow('penjualan', id);
+  if(doctype==='suratjalan') return lookupRow('pengiriman', id);
+  if(doctype==='quotation' || doctype==='proforma') return (state.data.quotation||[]).find(q=>q.id===id);
+  return null;
+}
+function invoiceSiblings(record){
+  return record.quotationId ? (state.data.penjualan||[]).filter(p=>p.quotationId===record.quotationId) : [record];
+}
+function invoiceIsCash(record){ return invoiceSiblings(record).every(r=>r.status==='Lunas'); }
+/* doctype 'invoice' dicetak sebagai Nota Penjualan bila semua baris sudah Lunas */
+function printKind(doctype, record){
+  if(doctype==='invoice') return invoiceIsCash(record) ? 'nota' : 'invoice';
+  return doctype;
+}
+/* Data isian manual disimpan di record sumber (ikut tersinkron ke Sheets) */
+function remarksHolder(kind, record){
+  if(kind==='quotation' || kind==='proforma') return {key:'quotation', rec:record};
+  if(kind==='suratjalan') return {key:'pengiriman', rec:record};
+  if(record.quotationId){
+    const q = (state.data.quotation||[]).find(x=>x.id===record.quotationId);
+    if(q) return {key:'quotation', rec:q};
+  }
+  return {key:'penjualan', rec:record};
+}
+function getRemarks(kind, record){
+  const h = remarksHolder(kind, record);
+  return (h.rec.docRemarks && h.rec.docRemarks[kind]) || {};
+}
+function quoCustomer(quo){ return quo.kodeCustomer ? lookupRow('masterCustomer', quo.kodeCustomer) : null; }
+function terminHariOf(customer){ return customer && Number(customer.terminPembayaranHari)>0 ? Number(customer.terminPembayaranHari) : 30; }
+function quoPembayaran(quo, rm){
+  if(rm && rm.pembayaran) return rm.pembayaran;
+  const c = quoCustomer(quo);
+  return (c && Number(c.terminPembayaranHari)>0) ? 'Termin' : 'Cash';
+}
+function proformaTipe(rm){ return PROFORMA_TIPE.includes(rm.tipe) ? rm.tipe : 'Lunas'; }
+
+/* Susun daftar catatan: {fixed, extra, manual}. preview=true -> untuk pratinjau di modal */
+function docNotes(kind, record, preview){
+  const cfg = getDocConfig();
+  const rm = getRemarks(kind, record);
+  const manual = (rm.manual||[]).map(t=>(t||'').trim()).filter(Boolean);
+  let fixed=[], extra=[], ctxExtra={};
+  if(kind==='quotation'){
+    const cust = quoCustomer(record);
+    const pay = quoPembayaran(record, rm);
+    ctxExtra.termin = terminHariOf(cust);
+    const first = preview ? '(Baris pembayaran: otomatis sesuai pilihan Cash / Termin)' : fillTokens(pay==='Cash' ? cfg.quotationCash : cfg.quotationTermin, docCtx(ctxExtra));
+    fixed = [first].concat(cfg.quotation.map(l=>fillTokens(l, docCtx(ctxExtra))));
+    if(rm.franco) extra.push('Harga Franco '+rm.franco);
+  } else if(kind==='proforma'){
+    const tipe = proformaTipe(rm);
+    ctxExtra.tipebayar = preview ? '(sesuai pilihan)' : (tipe==='Lunas' ? 'Full Payment' : tipe);
+    fixed = cfg.proforma.map(l=>fillTokens(l, docCtx(ctxExtra)));
+    const cust = quoCustomer(record);
+    const alamat = rm.alamatKirim!==undefined ? rm.alamatKirim : (cust?cust.alamat||'':'');
+    if(!preview && alamat) extra.push('Alamat kirim: '+alamat);
+  } else if(kind==='invoice'){
+    const cust = lookupRow('masterCustomer', record.kodeCustomer);
+    const cash = false;
+    ctxExtra.tipebayar = preview ? '(otomatis)' : ('Termin '+terminHariOf(cust)+' hari');
+    fixed = cfg.invoice.map(l=>fillTokens(l, docCtx(ctxExtra)));
+    const alamat = rm.alamatKirim!==undefined ? rm.alamatKirim : (cust?cust.alamat||'':'');
+    if(!preview && alamat) extra.push('Alamat kirim: '+alamat);
+  } else if(kind==='nota'){
+    fixed = cfg.nota.map(l=>fillTokens(l, docCtx()));
+  } else if(kind==='suratjalan'){
+    fixed = cfg.suratjalan.map(l=>fillTokens(l, docCtx()));
+  }
+  return {fixed:fixed.filter(Boolean), extra, manual};
+}
+function notesBlockHTML(kind, record){
+  const n = docNotes(kind, record, false);
+  const lines = n.fixed.concat(n.extra, n.manual);
+  if(!lines.length) return '';
+  return `<div style="font-size:10.5px;margin-top:16px;line-height:1.5;"><b>Catatan / Remarks:</b>
+    <ol style="margin:4px 0 0 18px;padding:0;">${lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')}</ol></div>`;
+}
+
 function buildDocumentHTML(type, record){
   let title='', nomor=record.id, tanggal=fmtDate(record.tanggal||todayStr()), body='';
   if(type==='po'){
@@ -1892,11 +2062,9 @@ function buildDocumentHTML(type, record){
     <div style="font-size:11px;margin-top:14px;">Status pembayaran: ${record.status}<br>Catatan: ${escapeHtml(record.catatan||'-')}</div>
     ${docFooterHTML('Dipesan oleh','Disetujui oleh')}`;
   } else if(type==='invoice'){
-    const siblingRows = record.quotationId
-      ? (state.data.penjualan||[]).filter(p=>p.quotationId===record.quotationId)
-      : [record];
+    const siblingRows = invoiceSiblings(record);
     const customer = lookupRow('masterCustomer', record.kodeCustomer);
-    const isCash = siblingRows.every(r=>r.status==='Lunas');
+    const isCash = invoiceIsCash(record);
     title = isCash ? 'NOTA PENJUALAN' : 'INVOICE';
     if(record.quotationId){ nomor = record.quotationId.replace('QUO','INV'); }
     const rows = siblingRows.map(r=>{
@@ -1908,7 +2076,7 @@ function buildDocumentHTML(type, record){
     if(isCash){
       statusLine = `<div style="font-size:12px;margin-top:6px;"><span style="background:#e4ece2;color:#3f6b4a;padding:3px 10px;border-radius:3px;font-weight:bold;">LUNAS</span></div>`;
     } else {
-      const terminHari = customer && customer.terminPembayaranHari ? Number(customer.terminPembayaranHari) : 30;
+      const terminHari = terminHariOf(customer);
       const jatuhTempo = new Date(new Date(record.tanggal).getTime() + terminHari*24*3600*1000);
       const statusRingkas = siblingRows.length>1 ? siblingRows.map(r=>r.status).join(', ') : record.status;
       statusLine = `<div style="font-size:11px;margin-top:6px;">Status pembayaran: ${statusRingkas}<br>Jatuh tempo: ${fmtDate(jatuhTempo.toISOString().slice(0,10))} (termin ${terminHari} hari)</div>`;
@@ -1917,7 +2085,7 @@ function buildDocumentHTML(type, record){
     ${itemsTableHTML(rows, true)}
     <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(total)}</div>
     ${statusLine}
-    <div style="font-size:11px;margin-top:8px;">Catatan: ${escapeHtml(record.catatan||'-')}</div>
+    ${notesBlockHTML(isCash?'nota':'invoice', record)}
     ${docFooterHTML('Hormat kami','Diterima oleh')}`;
   } else if(type==='suratjalan'){
     const penjualan = lookupRow('penjualan', record.idPenjualan);
@@ -1928,18 +2096,47 @@ function buildDocumentHTML(type, record){
     ${itemsTableHTML([{nama:barang?barang.namaBarang:'-', qty:penjualan?penjualan.qty:'-', ket:record.catatan||'-'}], false)}
     <div style="font-size:11px;">Ekspedisi: ${escapeHtml(record.ekspedisi||'-')} | No. Resi: ${escapeHtml(record.noResi||'-')}<br>
     Tanggal Kirim: ${fmtDate(record.tanggalKirim)} | Status: ${record.statusPengiriman}</div>
+    ${notesBlockHTML('suratjalan', record)}
     ${docFooterHTML('Dikirim oleh','Diterima oleh')}`;
-  } else if(type==='quotation'){
-    const customer = record.kodeCustomer ? lookupRow('masterCustomer', record.kodeCustomer) : null;
+  } else if(type==='quotation' || type==='proforma'){
+    const customer = quoCustomer(record);
     const custName = customer ? customer.namaCustomer : (record.namaCustomerManual||'-');
-    title = 'QUOTATION / PENAWARAN HARGA';
     const rows = (record.items||[]).map(it=>({nama:it.namaBarang, qty:it.qty, harga:quoItemHargaJual(it)}));
-    body = `<div style="margin-bottom:14px;font-size:12px;"><b>Kepada Yth:</b><br>${escapeHtml(custName)}${customer?`<br>${escapeHtml(customer.alamat||'')}<br>${escapeHtml(customer.telepon||'')}`:''}</div>
-    ${itemsTableHTML(rows, true)}
-    <div style="text-align:right;font-size:12px;">Diskon: ${rupiah(record.diskon||0)}</div>
-    <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(quoTotal(record))}</div>
-    <div style="font-size:11px;margin-top:14px;">Berlaku hingga: ${fmtDate(record.validUntil)}<br>Catatan: ${escapeHtml(record.catatan||'-')}</div>
-    ${docFooterHTML('Hormat kami','Disetujui oleh')}`;
+    const total = quoTotal(record);
+    const party = `<div style="margin-bottom:14px;font-size:12px;"><b>Kepada Yth:</b><br>${escapeHtml(custName)}${customer?`<br>${escapeHtml(customer.alamat||'')}<br>${escapeHtml(customer.telepon||'')}`:''}</div>`;
+    if(type==='quotation'){
+      title = 'QUOTATION / PENAWARAN HARGA';
+      body = `${party}
+      ${itemsTableHTML(rows, true)}
+      <div style="text-align:right;font-size:12px;">Diskon: ${rupiah(record.diskon||0)}</div>
+      <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(total)}</div>
+      <div style="font-size:11px;margin-top:14px;">Berlaku hingga: ${fmtDate(record.validUntil)}</div>
+      ${notesBlockHTML('quotation', record)}
+      ${docFooterHTML('Hormat kami','Disetujui oleh')}`;
+    } else {
+      const rm = getRemarks('proforma', record);
+      const tipe = proformaTipe(rm);
+      title = 'PROFORMA INVOICE';
+      nomor = record.id.replace('QUO','PRO');
+      tanggal = fmtDate(rm.tanggal || todayStr());
+      let payBlock;
+      if(tipe==='Lunas'){
+        payBlock = `<div style="text-align:right;font-size:13px;font-weight:bold;margin-top:6px;">Total yang harus dibayar (Lunas): ${rupiah(total)}</div>`;
+      } else {
+        const pct = tipe==='DP 30%' ? 30 : 50;
+        const dp = Math.round(total*pct/100);
+        payBlock = `<div style="text-align:right;font-size:13px;font-weight:bold;margin-top:6px;">${tipe} yang harus dibayar: ${rupiah(dp)}</div>
+        <div style="text-align:right;font-size:12px;">Sisa pelunasan: ${rupiah(total-dp)}</div>`;
+      }
+      body = `${party}
+      <div style="font-size:11px;margin-bottom:8px;">Ref. Quotation: ${escapeHtml(record.id)}</div>
+      ${itemsTableHTML(rows, true)}
+      <div style="text-align:right;font-size:12px;">Diskon: ${rupiah(record.diskon||0)}</div>
+      <div style="text-align:right;font-size:13px;font-weight:bold;">Total: ${rupiah(total)}</div>
+      ${payBlock}
+      ${notesBlockHTML('proforma', record)}
+      ${docFooterHTML('Hormat kami','Disetujui oleh')}`;
+    }
   }
   return `<div style="padding:24px;width:210mm;min-height:280mm;">
     ${letterheadHTML()}
@@ -1949,19 +2146,62 @@ function buildDocumentHTML(type, record){
   </div>`;
 }
 function printDocument(doctype, id){
-  let record;
-  if(doctype==='po') record = lookupRow('pembelian', id);
-  else if(doctype==='invoice') record = lookupRow('penjualan', id);
-  else if(doctype==='suratjalan') record = lookupRow('pengiriman', id);
-  else if(doctype==='quotation') record = lookupRow('quotation', id);
+  const record = findDocRecord(doctype, id);
   if(!record){ showToast('Data tidak ditemukan'); return; }
   const html = buildDocumentHTML(doctype, record);
-  const fileId = (doctype==='invoice' && record.quotationId) ? record.quotationId.replace('QUO','INV') : id;
+  let fileId = id;
+  if(doctype==='invoice' && record.quotationId) fileId = record.quotationId.replace('QUO','INV');
+  if(doctype==='proforma') fileId = id.replace('QUO','PRO');
+  const prefix = doctype==='invoice' ? (invoiceIsCash(record)?'nota':'invoice') : doctype;
   const container = document.getElementById('printArea');
   container.innerHTML = html;
-  const opt = { margin:5, filename:`${doctype}-${fileId}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+  const opt = { margin:5, filename:`${prefix}-${fileId}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
   showToast('Menyiapkan PDF…');
   html2pdf().set(opt).from(container).save().then(()=>{ container.innerHTML=''; }).catch(()=>{ showToast('Gagal membuat PDF'); container.innerHTML=''; });
+}
+
+/* Modal opsi cetak: pratinjau baris standar + isian manual */
+const DOC_KIND_LABEL = {quotation:'Quotation', proforma:'Proforma Invoice', invoice:'Invoice', nota:'Nota Penjualan', suratjalan:'Surat Jalan'};
+function renderPrintOptsModal(){
+  const m = state.modal;
+  const rec = findDocRecord(m.doctype, m.id);
+  if(!rec){ return `<div class="overlay" data-action="close-modal"><div class="modal"><div class="modal-body">Data tidak ditemukan.</div><div class="modal-foot"><button class="btn btn-primary" data-action="close-modal">Tutup</button></div></div></div>`; }
+  const kind = printKind(m.doctype, rec);
+  const rm = getRemarks(kind, rec);
+  const n = docNotes(kind, rec, true);
+  const manual = rm.manual||[];
+  let fields = '';
+  if(kind==='quotation'){
+    const pay = quoPembayaran(rec, rm);
+    fields += `<div class="field"><label>Pembayaran</label><select id="pf-pembayaran"><option value="Cash" ${pay==='Cash'?'selected':''}>Cash (tunai, lunas sebelum kirim)</option><option value="Termin" ${pay==='Termin'?'selected':''}>Termin</option></select></div>
+    <div class="field"><label>Harga Franco (opsional)</label><input id="pf-franco" placeholder="mis. Banjarmasin" value="${escapeHtml(rm.franco||'')}"></div>`;
+  }
+  if(kind==='proforma'){
+    const tipe = proformaTipe(rm);
+    fields += `<div class="field"><label>Pembayaran Proforma</label><select id="pf-tipe">${PROFORMA_TIPE.map(t=>`<option value="${t}" ${t===tipe?'selected':''}>${t}</option>`).join('')}</select></div>`;
+  }
+  if(kind==='proforma' || kind==='invoice'){
+    const cust = kind==='proforma' ? quoCustomer(rec) : lookupRow('masterCustomer', rec.kodeCustomer);
+    const alamat = rm.alamatKirim!==undefined ? rm.alamatKirim : (cust?cust.alamat||'':'');
+    fields += `<div class="field"><label>Alamat kirim (kosongkan bila tidak perlu)</label><textarea id="pf-alamat" rows="2">${escapeHtml(alamat)}</textarea></div>`;
+  }
+  let manualHtml = '';
+  for(let i=0;i<MANUAL_COUNT[kind];i++){
+    manualHtml += `<div class="field"><label>Catatan tambahan ${i+1} (opsional)</label><input id="pf-manual-${i}" value="${escapeHtml(manual[i]||'')}"></div>`;
+  }
+  return `<div class="overlay" data-action="close-modal"><div class="modal">
+    <div class="modal-head"><h3>Cetak ${DOC_KIND_LABEL[kind]}</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      ${fields}
+      ${manualHtml}
+      <div style="font-size:11px;color:var(--ink-500);margin-top:4px;"><b>Baris standar (otomatis, ubah di Pengaturan Dokumen):</b>
+        <ol style="margin:4px 0 0 18px;padding:0;">${n.fixed.map(l=>`<li>${escapeHtml(l)}</li>`).join('')}</ol></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-action="close-modal">Batal</button>
+      <button class="btn btn-primary" data-action="print-confirm">Cetak PDF</button>
+    </div>
+  </div></div>`;
 }
 
 /* ============ EVENT DELEGATION ============ */
@@ -2039,7 +2279,55 @@ document.addEventListener('click', function(e){
   if(action==='close-modal'){ if(el.classList.contains('overlay') && e.target!==el) return; state.modal=null; render(); return; }
 
   if(action==='print-doc'){
-    printDocument(el.getAttribute('data-doctype'), el.getAttribute('data-id'));
+    const dt = el.getAttribute('data-doctype'), did = el.getAttribute('data-id');
+    if(dt==='po'){ printDocument(dt, did); return; }
+    if(!findDocRecord(dt, did)){ showToast('Data tidak ditemukan'); return; }
+    state.modal = {type:'printOpts', doctype:dt, id:did};
+    render();
+    return;
+  }
+  if(action==='print-confirm'){
+    const m = state.modal; if(!m || m.type!=='printOpts') return;
+    const rec = findDocRecord(m.doctype, m.id); if(!rec){ showToast('Data tidak ditemukan'); return; }
+    const kind = printKind(m.doctype, rec);
+    const val = id=>{ const x=document.getElementById(id); return x?x.value.trim():''; };
+    const data = {};
+    const old = getRemarks(kind, rec);
+    if(kind==='quotation'){ data.pembayaran = val('pf-pembayaran')||'Cash'; data.franco = val('pf-franco'); }
+    if(kind==='proforma'){ data.tipe = val('pf-tipe')||'Lunas'; data.alamatKirim = val('pf-alamat'); data.tanggal = old.tanggal || todayStr(); }
+    if(kind==='invoice'){ data.alamatKirim = val('pf-alamat'); }
+    data.manual = []; for(let i=0;i<MANUAL_COUNT[kind];i++) data.manual.push(val('pf-manual-'+i));
+    const h = remarksHolder(kind, rec);
+    h.rec.docRemarks = h.rec.docRemarks || {};
+    h.rec.docRemarks[kind] = data;
+    saveEntity(h.key);
+    state.modal = null;
+    render();
+    printDocument(m.doctype, m.id);
+    return;
+  }
+  if(action==='save-doc-settings'){
+    const v = id=>{ const x=document.getElementById(id); return x?x.value:''; };
+    const lines = id=>v(id).split('\n').map(t=>t.trim()).filter(Boolean);
+    const bank = {bank:v('dc-bank').trim(), norek:v('dc-norek').trim(), atasnama:v('dc-atasnama').trim()};
+    if(!bank.bank || !bank.norek || !bank.atasnama){ showToast('Bank, No. Rekening, dan Atas Nama wajib diisi'); return; }
+    state.settings.docConfig = {
+      bank,
+      quotationCash: v('dc-quotationCash').trim(),
+      quotationTermin: v('dc-quotationTermin').trim(),
+      quotation: lines('dc-quotation'), proforma: lines('dc-proforma'), invoice: lines('dc-invoice'),
+      nota: lines('dc-nota'), suratjalan: lines('dc-suratjalan'),
+    };
+    saveSettings();
+    showToast('Pengaturan dokumen disimpan');
+    return;
+  }
+  if(action==='reset-doc-settings'){
+    if(!confirm('Kembalikan semua teks dokumen & rekening ke bawaan?')) return;
+    state.settings.docConfig = {};
+    saveSettings();
+    render();
+    showToast('Dikembalikan ke bawaan');
     return;
   }
 
