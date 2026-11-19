@@ -879,9 +879,15 @@ function calcHargaJual(hargaBeli, ongkosKirim, materialHandling, marginPersen){
 }
 
 /* ============ AUTH ============ */
-function tryLogin(username, password){
+async function tryLogin(username, password, retried){
   const users = state.data.users||[];
   const found = users.find(u=>u.username===username && u.password===password);
+  if(!found && state.sheetsUrl && !retried){
+    // Perangkat ini mungkin belum punya data pengguna terbaru: tarik dari Sheets lalu coba lagi
+    state.loginError = 'Memeriksa data terbaru…'; render();
+    await sheetsPull();
+    return tryLogin(username, password, true);
+  }
   if(found){
     state.user = {username:found.username, role:found.role, namaLengkap:found.namaLengkap||found.username, nik:found.nik||'', kodeMitra:found.kodeMitra||''};
     state.loginError = '';
@@ -963,6 +969,7 @@ function renderLogin(){
         <div class="field"><label>Password</label><input type="password" name="password" required></div>
         <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">Masuk</button>
       </form>
+      <div class="login-hint"><a href="#" data-action="login-set-url" style="color:inherit;text-decoration:underline;">Atur sambungan data (perangkat baru)</a></div>
     </div>
   </div>`;
 }
@@ -2244,6 +2251,20 @@ document.addEventListener('click', function(e){
   if(action==='open-sheet'){ state.sheetOpen=true; render(); return; }
   if(action==='close-sheet'){ if(el.classList.contains('sheet-overlay') && e.target!==el) return; state.sheetOpen=false; render(); return; }
   if(action==='open-settings'){ state.sheetOpen=false; state.modal={type:'settings'}; render(); return; }
+  if(action==='login-set-url'){
+    e.preventDefault();
+    const cur = state.sheetsUrl || '';
+    const val = prompt('Tempel URL Web App Google Apps Script (dari Admin):', cur);
+    if(val===null) return;
+    const url = val.trim();
+    state.sheetsUrl = url;
+    window.storage.set('sheetsUrl', url);
+    state.syncStatus = 'local';
+    if(!url){ state.loginError=''; render(); showToast('Sambungan data dikosongkan'); return; }
+    state.loginError = 'Mengambil data pengguna…'; render();
+    sheetsPull().then(ok=>{ state.loginError=''; render(); showToast(ok?'Data tersinkron. Silakan login.':'Gagal terhubung. Periksa URL & koneksi.'); });
+    return;
+  }
   if(action==='sheets-save-url'){
     const inputEl = document.getElementById('sheetsUrlInput');
     const val = inputEl ? inputEl.value.trim() : '';
