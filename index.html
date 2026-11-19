@@ -777,17 +777,8 @@ async function loadData(){
   if(!state.data.users || state.data.users.length===0){
     state.data.users = [
       {id:'USR-ADMIN', username:'admin', password:'admin123', role:'Admin', namaLengkap:'Administrator'},
-      {id:'USR-PROC', username:'procurement', password:'proc123', role:'Procurement', namaLengkap:'Staff Procurement'},
-      {id:'USR-JUAL', username:'penjualan', password:'jual123', role:'Penjualan', namaLengkap:'Staff Penjualan'},
-      {id:'USR-SALES', username:'sales', password:'sales123', role:'Sales', namaLengkap:'Staff Sales Lapangan'},
-      {id:'USR-FA', username:'fa', password:'fa123', role:'FA', namaLengkap:'Staff Finance & Accounting'},
-      {id:'USR-GA', username:'ga', password:'ga123', role:'GA', namaLengkap:'Staff GA'},
-      {id:'USR-MITRA', username:'erik', password:'erik123', role:'Mitra', namaLengkap:'Erik (Mitra Marketing)'},
     ];
     await saveEntity('users');
-  }
-  if((state.data.masterBarang||[]).length===0 && (state.data.quotation||[]).length===0){
-    await seedDemoData();
   }
   state.loading = false;
   render();
@@ -972,7 +963,6 @@ function renderLogin(){
         <div class="field"><label>Password</label><input type="password" name="password" required></div>
         <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">Masuk</button>
       </form>
-      <div class="login-hint">Demo: admin/admin123 (Admin), procurement/proc123, penjualan/jual123, sales/sales123, fa/fa123, ga/ga123, erik/erik123 (Mitra)</div>
     </div>
   </div>`;
 }
@@ -1866,6 +1856,10 @@ function renderSettingsModal(){
         <button type="button" class="btn btn-ghost btn-sm" data-action="sheets-push">⬆ Kirim ke Sheets</button>
         <button type="button" class="btn btn-ghost btn-sm" data-action="sheets-disconnect">Putuskan</button>
       </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--kraft-300);">
+        <button type="button" class="btn btn-ghost btn-sm" style="color:#a33;" data-action="reset-demo-data">🗑 Kosongkan semua data (mulai data asli)</button>
+        <p style="font-size:11px;color:var(--ink-500);margin:6px 0 0;">Menghapus semua data di perangkat ini dan (bila tersambung) di Google Sheets. Hanya akun Admin yang sedang login yang dipertahankan. Pengaturan margin dan dokumen tidak dihapus.</p>
+      </div>
       <p style="font-size:11px;color:var(--ink-500);margin-top:12px;"><b>Tarik dari Sheets</b>: data di Sheets menimpa data lokal perangkat ini. <b>Kirim ke Sheets</b>: data lokal perangkat ini menimpa data di Sheets (dipakai sekali saja di awal, untuk mengisi Sheets yang masih kosong). Setelah tersambung, perubahan baru akan otomatis terkirim ke Sheets, dan setiap kali aplikasi dibuka akan otomatis menarik data terbaru.</p>
     </div>
     <div class="modal-foot"><button class="btn btn-primary" data-action="close-modal">Tutup</button></div>
@@ -2266,6 +2260,20 @@ document.addEventListener('click', function(e){
     if(!state.sheetsUrl){ showToast('Isi & simpan URL dulu'); return; }
     if(!confirm('Kirim semua data lokal ke Google Sheets? Data di Sheets akan ditimpa.')) return;
     sheetsPushAll().then(ok=>showToast(ok?'Berhasil mengirim data ke Sheets':'Gagal mengirim data ke Sheets'));
+    return;
+  }
+  if(action==='reset-demo-data'){
+    if(!state.user || state.user.role!=='Admin') return;
+    const t = prompt('Ini akan MENGHAPUS SEMUA data (barang, customer, transaksi, pengguna lain, dll). Ketik HAPUS untuk melanjutkan:');
+    if(t!=='HAPUS'){ showToast('Dibatalkan, tidak ada data yang dihapus'); return; }
+    const me = (state.data.users||[]).find(u=>u.username===state.user.username);
+    SYNC_KEYS.forEach(k=>{ state.data[k] = []; });
+    state.data.users = me ? [me] : [];
+    (async()=>{
+      await Promise.all(SYNC_KEYS.map(k=>saveEntity(k)));
+      state.modal = null; state.view = 'dashboard'; render();
+      showToast('Semua data dikosongkan. Siap input data asli.');
+    })();
     return;
   }
   if(action==='sheets-disconnect'){
