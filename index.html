@@ -893,7 +893,7 @@ function tryLogin(username, password){
     render();
   }
 }
-function doLogout(){ state.user=null; saveSession(); render(); }
+function doLogout(){ state.sheetOpen=false; state.modal=null; state.user=null; saveSession(); render(); }
 function canAccess(menuId){
   if(!state.user) return false;
   const m = MENU.find(mm=>mm.id===menuId);
@@ -1031,6 +1031,9 @@ function renderSheet(){
         const target = firstAccessibleSub(m);
         return `<div class="sheet-item" data-action="nav" data-target="${target}">${icon(m.icon)}<span>${m.label}</span></div>`;
       }).join('')}
+      <div style="border-top:1px solid var(--kraft-300);margin:6px 0;"></div>
+      <div class="sheet-item" data-action="open-settings"><span class="sync-dot ${state.syncStatus}"></span><span>${syncLabel()}</span></div>
+      <div class="sheet-item" data-action="logout" style="color:#a33;font-weight:600;"><span style="width:16px;text-align:center;">&#8594;</span><span>Keluar (${escapeHtml(state.user.namaLengkap||state.user.username||'')})</span></div>
     </div>
   </div>`;
 }
@@ -2240,7 +2243,7 @@ document.addEventListener('click', function(e){
   }
   if(action==='open-sheet'){ state.sheetOpen=true; render(); return; }
   if(action==='close-sheet'){ if(el.classList.contains('sheet-overlay') && e.target!==el) return; state.sheetOpen=false; render(); return; }
-  if(action==='open-settings'){ state.modal={type:'settings'}; render(); return; }
+  if(action==='open-settings'){ state.sheetOpen=false; state.modal={type:'settings'}; render(); return; }
   if(action==='sheets-save-url'){
     const inputEl = document.getElementById('sheetsUrlInput');
     const val = inputEl ? inputEl.value.trim() : '';
