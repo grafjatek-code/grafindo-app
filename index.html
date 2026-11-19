@@ -1002,10 +1002,11 @@ function renderSidebar(){
   </div>`;
 }
 function syncLabel(){
-  if(state.syncStatus==='connected') return 'Google Sheets tersambung';
+  const admin = state.user && state.user.role==='Admin';
+  if(state.syncStatus==='connected') return admin ? 'Google Sheets tersambung' : 'Data tersinkron';
   if(state.syncStatus==='syncing') return 'Menyinkronkan…';
-  if(state.syncStatus==='error') return 'Gagal sinkron ke Sheets';
-  return 'Penyimpanan lokal';
+  if(state.syncStatus==='error') return admin ? 'Gagal sinkron ke Sheets' : 'Gagal sinkron data';
+  return admin ? 'Penyimpanan lokal' : 'Hanya di perangkat ini';
 }
 
 function renderBottomTabs(){
@@ -1836,10 +1837,10 @@ function renderModal(){
 function renderSettingsModal(){
   if(state.user.role!=='Admin'){
     return `<div class="overlay" data-action="close-modal"><div class="modal">
-      <div class="modal-head"><h3>Sinkronisasi Data</h3><button class="modal-close" data-action="close-modal">✕</button></div>
+      <div class="modal-head"><h3>Status Data</h3><button class="modal-close" data-action="close-modal">✕</button></div>
       <div class="modal-body">
         <p style="font-size:12px;color:var(--ink-500);margin-top:0;">Status saat ini: <b>${syncLabel()}</b></p>
-        <p style="font-size:12px;color:var(--ink-500);">Hanya Admin yang dapat mengatur sambungan Google Sheets.</p>
+        <p style="font-size:12px;color:var(--ink-500);">Pengaturan sinkronisasi hanya dapat diubah oleh Admin.</p>
       </div>
       <div class="modal-foot"><button class="btn btn-primary" data-action="close-modal">Tutup</button></div>
     </div></div>`;
